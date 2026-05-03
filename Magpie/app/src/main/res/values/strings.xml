@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Magpie</string>
+    <string name="auth_login_title">Entrar</string>
+    <string name="auth_login_subtitle">Acesse sua conta para continuar.</string>
+    <string name="auth_register_title">Criar conta</string>
+    <string name="auth_register_subtitle">Registre um usuário para começar.</string>
+    <string name="auth_username_label">Usuário</string>
+    <string name="auth_password_label">Senha</string>
+    <string name="auth_confirm_password_label">Confirmar senha</string>
+    <string name="auth_login_action">Login</string>
+    <string name="auth_register_action">Registrar</string>
+    <string name="auth_go_to_register_action">Registrar</string>
+    <string name="auth_go_to_login_action">Login</string>
+    <string name="auth_logout_action">Sair</string>
+    <string name="auth_logged_in_title">Autenticado</string>
+    <string name="auth_logged_in_as">Logado como %1$s</string>
+    <string name="auth_error_user_exists">Usuário já existe.</string>
+    <string name="auth_error_user_not_found">Usuário não encontrado.</string>
+    <string name="auth_error_invalid_credentials">Credenciais inválidas.</string>
+    <string name="auth_error_password_mismatch">As senhas não coincidem.</string>
+</resources>
