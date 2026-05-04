@@ -12,4 +12,4 @@ services:
       - PYTHONPATH=/app
     volumes:
       - ./:/app
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    command: sh -c "alembic upgrade head && python -m scripts.seed_users_and_reviews && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
