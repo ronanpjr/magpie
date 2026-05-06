@@ -54,6 +54,9 @@ fun MagpieNavGraph() {
     val userProfileRepository = remember(context) {
         UserProfileRepository(authApiService, tokenManager, reviewRepository)
     }
+    val startDestination = remember(tokenManager) {
+        if (tokenManager.hasValidToken()) Screen.Feed.route else Screen.Login.route
+    }
     val scope = rememberCoroutineScope()
     var authErrorCode by remember { mutableStateOf<String?>(null) }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -96,7 +99,7 @@ fun MagpieNavGraph() {
     ) { innerPadding: PaddingValues ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Login.route
+            startDestination = startDestination
         ) {
             composable(Screen.Login.route) {
                 LoginScreen(

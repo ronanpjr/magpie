@@ -1,13 +1,16 @@
 package com.magpie.magpie.ui.screens.auth
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -21,6 +24,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -178,13 +184,20 @@ private fun AuthFormLayout(
                 .padding(horizontal = 24.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
         ) {
-            Image(
-                painter = painterResource(id = R.mipmap.magpie_foreground),
-                contentDescription = stringResource(R.string.app_name),
+            Box(
                 modifier = Modifier
-                    .size(200.dp)
+                    .size(100.dp)
                     .align(Alignment.CenterHorizontally)
-            )
+                    .clip(CircleShape)
+                    .background(colorResource(R.color.magpie_background))
+            ) {
+                Image(
+                    painter = painterResource(id = R.mipmap.magpie_foreground),
+                    contentDescription = stringResource(R.string.app_name),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
             Text(
                 text = title,
                 style = MaterialTheme.typography.headlineMedium,
