@@ -13,6 +13,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.magpie.magpie.R
@@ -20,9 +21,13 @@ import com.magpie.magpie.data.auth.RemoteAuthRepository
 import com.magpie.magpie.data.auth.api.AuthApiService
 import com.magpie.magpie.data.auth.token.TokenManager
 import com.magpie.magpie.data.network.RetrofitClient
-import com.magpie.magpie.ui.screens.auth.AuthHomeScreen
+import com.magpie.magpie.data.profile.UserProfileRepository
 import com.magpie.magpie.ui.screens.auth.LoginScreen
 import com.magpie.magpie.ui.screens.auth.RegisterScreen
+import com.magpie.magpie.ui.screens.profile.UserProfileScreen
+import com.magpie.magpie.ui.screens.profile.UserProfileViewModel
+import com.magpie.magpie.ui.screens.profile.UserProfileViewType
+import com.magpie.magpie.ui.screens.shell.MagpieBottomNav
 import kotlinx.coroutines.launch
 
 @Composable
@@ -35,10 +40,52 @@ fun MagpieNavGraph() {
         val authApiService = RetrofitClient.createService(AuthApiService::class.java)
         RemoteAuthRepository(authApiService, tokenManager)
     }
+    val authApiService = remember(context) {
+        RetrofitClient.createService(AuthApiService::class.java)
+    }
+    val userProfileRepository = remember(context) {
+        UserProfileRepository(authApiService, tokenManager)
+    }
     val scope = rememberCoroutineScope()
     var authErrorCode by remember { mutableStateOf<String?>(null) }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    val showBottomBar = currentRoute in setOf(
+        Screen.Feed.route,
+        Screen.Search.route,
+        Screen.MyProfile.route
+    )
 
-    Scaffold { innerPadding: PaddingValues ->
+    Scaffold(
+        bottomBar = {
+            if (showBottomBar) {
+                MagpieBottomNav(
+                    currentDestination = currentRoute,
+                    onFeedClick = {
+                        navController.navigate(Screen.Feed.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onSearchClick = {
+                        navController.navigate(Screen.Search.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onProfileClick = {
+                        navController.navigate(Screen.MyProfile.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
+            }
+        }
+    ) { innerPadding: PaddingValues ->
         NavHost(
             navController = navController,
             startDestination = Screen.Login.route
@@ -50,8 +97,8 @@ fun MagpieNavGraph() {
                         scope.launch {
                             val result = authRepository.login(username, password)
                             authErrorCode = if (result.success) null else result.message
-                            if (result.success && result.username != null) {
-                                navController.navigate("${Screen.Home.route}/${result.username}") {
+                            if (result.success) {
+                                navController.navigate(Screen.Feed.route) {
                                     popUpTo(Screen.Login.route) { inclusive = true }
                                 }
                             }
@@ -87,15 +134,96 @@ fun MagpieNavGraph() {
                 )
             }
 
-            composable(
-                route = "${Screen.Home.route}/{username}",
-                arguments = listOf(navArgument("username") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val username = backStackEntry.arguments?.getString("username").orEmpty()
-                AuthHomeScreen(
-                    username = username,
+            composable(Screen.Feed.route) {
+                val viewModel = remember {
+                    UserProfileViewModel(
+                        repository = userProfileRepository,
+                        viewType = UserProfileViewType.ME
+                    )
+                }
+                UserProfileScreen(
+                    paddingValues = innerPadding,
+                    viewModel = viewModel,
+                    onFollowersClick = {},
+                    onFollowingClick = {},
+                    onEditProfile = {},
                     onLogout = {
                         authErrorCode = null
+                        scope.launch { authRepository.logout() }
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(Screen.Search.route) {
+                val viewModel = remember {
+                    UserProfileViewModel(
+                        repository = userProfileRepository,
+                        viewType = UserProfileViewType.ME
+                    )
+                }
+                UserProfileScreen(
+                    paddingValues = innerPadding,
+                    viewModel = viewModel,
+                    onFollowersClick = {},
+                    onFollowingClick = {},
+                    onEditProfile = {},
+                    onLogout = {
+                        authErrorCode = null
+                        scope.launch { authRepository.logout() }
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(Screen.MyProfile.route) {
+                val viewModel = remember {
+                    UserProfileViewModel(
+                        repository = userProfileRepository,
+                        viewType = UserProfileViewType.ME
+                    )
+                }
+                UserProfileScreen(
+                    paddingValues = innerPadding,
+                    viewModel = viewModel,
+                    onFollowersClick = {},
+                    onFollowingClick = {},
+                    onEditProfile = {},
+                    onLogout = {
+                        authErrorCode = null
+                        scope.launch { authRepository.logout() }
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(
+                route = Screen.UserProfile.route,
+                arguments = listOf(navArgument("userId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                val viewModel = remember {
+                    UserProfileViewModel(
+                        repository = userProfileRepository,
+                        userId = userId,
+                        viewType = UserProfileViewType.OTHER
+                    )
+                }
+                UserProfileScreen(
+                    paddingValues = innerPadding,
+                    viewModel = viewModel,
+                    onFollowersClick = {},
+                    onFollowingClick = {},
+                    onEditProfile = {},
+                    onLogout = {
+                        authErrorCode = null
+                        scope.launch { authRepository.logout() }
                         navController.navigate(Screen.Login.route) {
                             popUpTo(navController.graph.id) { inclusive = true }
                         }
