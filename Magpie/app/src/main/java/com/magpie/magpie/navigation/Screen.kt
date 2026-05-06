@@ -3,5 +3,20 @@ package com.magpie.magpie.navigation
 sealed class Screen(val route: String) {
     data object Login : Screen("login")
     data object Register : Screen("register")
-    data object Home : Screen("home")
+
+    /** Shell principal com bottom bar; `username` vem do login. */
+    data object Main : Screen("main")
+}
+
+/** Rotas internas da bottom bar */
+sealed class MainTab(val route: String) {
+    data object Home : MainTab("tab_home")
+    data object Search : MainTab("tab_search")
+    data object Rate : MainTab("tab_rate")
+    data object Profile : MainTab("tab_profile")
+    data object More : MainTab("tab_more")
+
+    companion object {
+        val entries: List<MainTab> = listOf(Home, Search, Rate, Profile, More)
+    }
 }
