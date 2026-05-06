@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.magpie.magpie.R
+import com.magpie.magpie.data.review.models.ReviewReadDto
 
 data class UserProfileUiModel(
     val displayName: String,
@@ -50,7 +51,8 @@ data class UserProfileUiModel(
     val avatarUrl: String?,
     val followerCount: Int,
     val followingCount: Int,
-    val isFollowing: Boolean
+    val isFollowing: Boolean,
+    val reviews: List<ReviewReadDto> = emptyList()
 )
 
 enum class UserProfileViewType {
@@ -68,7 +70,6 @@ fun UserProfileScreen(
     onLogout: () -> Unit = {}
 ) {
     val uiState = viewModel.uiState.collectAsState()
-    val reviews = ProfileReviewPlaceholder.sample()
 
     Box(
         modifier = Modifier
@@ -113,8 +114,8 @@ fun UserProfileScreen(
                             style = MaterialTheme.typography.titleLarge
                         )
                     }
-                    items(reviews) { review ->
-                        ReviewPlaceholderCard(review = review)
+                    items(profile.reviews) { review ->
+                        ReviewCard(review = review)
                     }
                     item {
                         OutlinedButton(
@@ -147,70 +148,6 @@ fun UserProfileScreen(
                         color = MaterialTheme.colorScheme.error
                     )
                 }
-            }
-        }
-    }
-}
-
-/**
- * Overloaded version for backward compatibility with hardcoded data
- */
-@Composable
-fun UserProfileScreen(
-    paddingValues: PaddingValues,
-    viewType: UserProfileViewType,
-    profile: UserProfileUiModel,
-    onFollowToggle: () -> Unit,
-    onEditProfile: () -> Unit,
-    onFollowersClick: () -> Unit,
-    onFollowingClick: () -> Unit,
-    onLogout: () -> Unit
-) {
-    val reviews = ProfileReviewPlaceholder.sample()
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            ProfileHeader(
-                viewType = viewType,
-                profile = profile,
-                onFollowToggle = onFollowToggle,
-                onEditProfile = onEditProfile
-            )
-        }
-        item {
-            ProfileStats(
-                followerCount = profile.followerCount,
-                followingCount = profile.followingCount,
-                onFollowersClick = onFollowersClick,
-                onFollowingClick = onFollowingClick
-            )
-        }
-        item {
-            ProfileBio(bio = profile.bio)
-        }
-        item {
-            Text(
-                text = stringResource(R.string.profile_label_reviews),
-                style = MaterialTheme.typography.titleLarge
-            )
-        }
-        items(reviews) { review ->
-            ReviewPlaceholderCard(review = review)
-        }
-        item {
-            OutlinedButton(
-                onClick = onLogout,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp, bottom = 40.dp)
-            ) {
-                Text(text = stringResource(R.string.profile_action_logout))
             }
         }
     }
@@ -411,39 +348,8 @@ private fun ProfileBio(bio: String?) {
     }
 }
 
-data class ProfileReviewPlaceholder(
-    val title: String,
-    val subtitle: String,
-    val body: String,
-    val rating: String
-) {
-    companion object {
-        @Composable
-        fun sample(): List<ProfileReviewPlaceholder> = listOf(
-            ProfileReviewPlaceholder(
-                title = stringResource(R.string.profile_review_placeholder_title_one),
-                subtitle = stringResource(R.string.profile_review_placeholder_subtitle_one),
-                body = stringResource(R.string.profile_review_placeholder_body_one),
-                rating = stringResource(R.string.profile_review_placeholder_rating_one)
-            ),
-            ProfileReviewPlaceholder(
-                title = stringResource(R.string.profile_review_placeholder_title_two),
-                subtitle = stringResource(R.string.profile_review_placeholder_subtitle_two),
-                body = stringResource(R.string.profile_review_placeholder_body_two),
-                rating = stringResource(R.string.profile_review_placeholder_rating_two)
-            ),
-            ProfileReviewPlaceholder(
-                title = stringResource(R.string.profile_review_placeholder_title_three),
-                subtitle = stringResource(R.string.profile_review_placeholder_subtitle_three),
-                body = stringResource(R.string.profile_review_placeholder_body_three),
-                rating = stringResource(R.string.profile_review_placeholder_rating_three)
-            )
-        )
-    }
-}
-
 @Composable
-private fun ReviewPlaceholderCard(review: ProfileReviewPlaceholder) {
+private fun ReviewCard(review: ReviewReadDto) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp),
@@ -458,7 +364,7 @@ private fun ReviewPlaceholderCard(review: ProfileReviewPlaceholder) {
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
-                            text = review.rating,
+                            text = String.format("%.1f", review.rating),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -467,22 +373,24 @@ private fun ReviewPlaceholderCard(review: ProfileReviewPlaceholder) {
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = review.title,
+                        text = review.targetTitle,
                         style = MaterialTheme.typography.titleLarge
                     )
                     Text(
-                        text = review.subtitle,
+                        text = "${review.artistName} · ${review.createdAt.take(4)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = review.body,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            if (!review.body.isNullOrEmpty()) {
+                Text(
+                    text = review.body,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
     }
 }

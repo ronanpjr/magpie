@@ -3,10 +3,13 @@ package com.magpie.magpie.data.profile
 import com.magpie.magpie.data.auth.api.AuthApiService
 import com.magpie.magpie.data.auth.models.UserRead
 import com.magpie.magpie.data.auth.token.TokenManager
+import com.magpie.magpie.data.review.ReviewRepository
+import com.magpie.magpie.data.review.models.ReviewReadDto
 
 class UserProfileRepository(
     private val authApiService: AuthApiService,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val reviewRepository: ReviewRepository
 ) {
     suspend fun getCurrentUser(): UserRead {
         val token = tokenManager.getAccessToken() ?: throw IllegalStateException("No access token found")
@@ -23,5 +26,9 @@ class UserProfileRepository(
     suspend fun updateCurrentUser(updates: Map<String, Any>): UserRead {
         val token = tokenManager.getAccessToken() ?: throw IllegalStateException("No access token found")
         return authApiService.updateCurrentUser(updates, "Bearer $token")
+    }
+
+    suspend fun getUserReviews(userId: Int, page: Int = 1, limit: Int = 20): List<ReviewReadDto> {
+        return reviewRepository.getUserReviews(userId, page, limit)
     }
 }

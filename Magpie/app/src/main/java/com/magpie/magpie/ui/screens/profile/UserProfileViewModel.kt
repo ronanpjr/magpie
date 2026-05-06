@@ -37,7 +37,17 @@ class UserProfileViewModel(
                     userId?.let { repository.getUserById(it) }
                         ?: throw IllegalArgumentException("User ID required for OTHER profile view")
                 }
-                _uiState.value = UserProfileUiState.Success(userRead.toUiModel())
+                
+                // Fetch reviews for the user
+                val reviews = try {
+                    val effectiveUserId = userId ?: userRead.id
+                    repository.getUserReviews(effectiveUserId)
+                } catch (e: Exception) {
+                    // If reviews fail to load, continue with empty list
+                    emptyList()
+                }
+                
+                _uiState.value = UserProfileUiState.Success(userRead.toUiModel(reviews))
             } catch (e: Exception) {
                 _uiState.value = UserProfileUiState.Error(e.message ?: "Unknown error")
             }
@@ -64,20 +74,30 @@ class UserProfileViewModel(
                     updates["bio"] = bio
                 }
                 val updatedUserRead = repository.updateCurrentUser(updates)
-                _uiState.value = UserProfileUiState.Success(updatedUserRead.toUiModel())
+                
+                // Preserve existing reviews from current state
+                val currentState = _uiState.value
+                val existingReviews = if (currentState is UserProfileUiState.Success) {
+                    currentState.profile.reviews
+                } else {
+                    emptyList()
+                }
+                
+                _uiState.value = UserProfileUiState.Success(updatedUserRead.toUiModel(existingReviews))
             } catch (e: Exception) {
                 _uiState.value = UserProfileUiState.Error(e.message ?: "Failed to update profile")
             }
         }
     }
 
-    private fun UserRead.toUiModel(): UserProfileUiModel = UserProfileUiModel(
+    private fun UserRead.toUiModel(reviews: List<com.magpie.magpie.data.review.models.ReviewReadDto> = emptyList()): UserProfileUiModel = UserProfileUiModel(
         displayName = this.displayName,
         username = this.username,
         bio = this.bio,
         avatarUrl = this.avatarUrl,
         followerCount = this.followerCount,
         followingCount = this.followingCount,
-        isFollowing = this.isFollowing
+        isFollowing = this.isFollowing,
+        reviews = reviews
     )
 }

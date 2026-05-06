@@ -22,6 +22,8 @@ import com.magpie.magpie.data.auth.api.AuthApiService
 import com.magpie.magpie.data.auth.token.TokenManager
 import com.magpie.magpie.data.network.RetrofitClient
 import com.magpie.magpie.data.profile.UserProfileRepository
+import com.magpie.magpie.data.review.ReviewRepository
+import com.magpie.magpie.data.review.api.ReviewApiService
 import com.magpie.magpie.ui.screens.auth.LoginScreen
 import com.magpie.magpie.ui.screens.auth.RegisterScreen
 import com.magpie.magpie.ui.screens.profile.UserProfileScreen
@@ -43,8 +45,14 @@ fun MagpieNavGraph() {
     val authApiService = remember(context) {
         RetrofitClient.createService(AuthApiService::class.java)
     }
+    val reviewApiService = remember(context) {
+        RetrofitClient.createService(ReviewApiService::class.java)
+    }
+    val reviewRepository = remember(context) {
+        ReviewRepository(reviewApiService, tokenManager)
+    }
     val userProfileRepository = remember(context) {
-        UserProfileRepository(authApiService, tokenManager)
+        UserProfileRepository(authApiService, tokenManager, reviewRepository)
     }
     val scope = rememberCoroutineScope()
     var authErrorCode by remember { mutableStateOf<String?>(null) }
