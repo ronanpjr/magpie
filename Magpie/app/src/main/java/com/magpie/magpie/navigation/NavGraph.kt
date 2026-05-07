@@ -24,6 +24,7 @@ import com.magpie.magpie.data.network.RetrofitClient
 import com.magpie.magpie.data.profile.UserProfileRepository
 import com.magpie.magpie.data.review.ReviewRepository
 import com.magpie.magpie.data.review.api.ReviewApiService
+import com.magpie.magpie.ui.main.MainShell
 import com.magpie.magpie.ui.screens.auth.LoginScreen
 import com.magpie.magpie.ui.screens.auth.RegisterScreen
 import com.magpie.magpie.ui.screens.profile.UserProfileScreen
@@ -108,8 +109,8 @@ fun MagpieNavGraph() {
                         scope.launch {
                             val result = authRepository.login(username, password)
                             authErrorCode = if (result.success) null else result.message
-                            if (result.success) {
-                                navController.navigate(Screen.Feed.route) {
+                            if (result.success && result.username != null) {
+                                navController.navigate("${Screen.Main.route}/${result.username}") {
                                     popUpTo(Screen.Login.route) { inclusive = true }
                                 }
                             }
@@ -232,6 +233,12 @@ fun MagpieNavGraph() {
                     onFollowersClick = {},
                     onFollowingClick = {},
                     onEditProfile = {},
+                route = "${Screen.Main.route}/{username}",
+                arguments = listOf(navArgument("username") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val username = backStackEntry.arguments?.getString("username").orEmpty()
+                MainShell(
+                    username = username,
                     onLogout = {
                         authErrorCode = null
                         scope.launch { authRepository.logout() }

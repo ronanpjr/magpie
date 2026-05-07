@@ -55,3 +55,9 @@
     <string name="profile_review_placeholder_body_three">Texturas orgânicas com uma batida precisa, sem perder o clima noturno.</string>
     <string name="profile_review_placeholder_rating_three">3.5</string>
 </resources>
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Pesquisar</string>
+    <string name="nav_rate">Avaliar</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="nav_more">Mais</string>
+</resources>
