@@ -18,4 +18,9 @@
     <string name="auth_error_user_not_found">Usuário não encontrado.</string>
     <string name="auth_error_invalid_credentials">Credenciais inválidas.</string>
     <string name="auth_error_password_mismatch">As senhas não coincidem.</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Pesquisar</string>
+    <string name="nav_rate">Avaliar</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="nav_more">Mais</string>
 </resources>

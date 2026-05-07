@@ -20,7 +20,7 @@ import com.magpie.magpie.data.auth.RemoteAuthRepository
 import com.magpie.magpie.data.auth.api.AuthApiService
 import com.magpie.magpie.data.auth.token.TokenManager
 import com.magpie.magpie.data.network.RetrofitClient
-import com.magpie.magpie.ui.screens.auth.AuthHomeScreen
+import com.magpie.magpie.ui.main.MainShell
 import com.magpie.magpie.ui.screens.auth.LoginScreen
 import com.magpie.magpie.ui.screens.auth.RegisterScreen
 import kotlinx.coroutines.launch
@@ -51,7 +51,7 @@ fun MagpieNavGraph() {
                             val result = authRepository.login(username, password)
                             authErrorCode = if (result.success) null else result.message
                             if (result.success && result.username != null) {
-                                navController.navigate("${Screen.Home.route}/${result.username}") {
+                                navController.navigate("${Screen.Main.route}/${result.username}") {
                                     popUpTo(Screen.Login.route) { inclusive = true }
                                 }
                             }
@@ -88,11 +88,11 @@ fun MagpieNavGraph() {
             }
 
             composable(
-                route = "${Screen.Home.route}/{username}",
+                route = "${Screen.Main.route}/{username}",
                 arguments = listOf(navArgument("username") { type = NavType.StringType })
             ) { backStackEntry ->
                 val username = backStackEntry.arguments?.getString("username").orEmpty()
-                AuthHomeScreen(
+                MainShell(
                     username = username,
                     onLogout = {
                         authErrorCode = null
