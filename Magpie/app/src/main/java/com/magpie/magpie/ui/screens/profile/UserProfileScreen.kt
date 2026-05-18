@@ -45,6 +45,7 @@ import com.magpie.magpie.R
 import com.magpie.magpie.data.review.models.ReviewReadDto
 
 data class UserProfileUiModel(
+    val id: Int,
     val displayName: String,
     val username: String,
     val bio: String?,
@@ -147,6 +148,12 @@ fun UserProfileScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error
                     )
+                    if (state.isUnauthorized) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedButton(onClick = onLogout) {
+                            Text(text = stringResource(R.string.profile_action_logout))
+                        }
+                    }
                 }
             }
         }

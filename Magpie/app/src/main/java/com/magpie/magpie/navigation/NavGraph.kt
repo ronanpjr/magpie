@@ -3,17 +3,18 @@ package com.magpie.magpie.navigation
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.magpie.magpie.R
@@ -27,10 +28,12 @@ import com.magpie.magpie.data.review.api.ReviewApiService
 import com.magpie.magpie.ui.main.MainShell
 import com.magpie.magpie.ui.screens.auth.LoginScreen
 import com.magpie.magpie.ui.screens.auth.RegisterScreen
+import com.magpie.magpie.ui.screens.profile.ProfileEditScreen
 import com.magpie.magpie.ui.screens.profile.UserProfileScreen
 import com.magpie.magpie.ui.screens.profile.UserProfileViewModel
 import com.magpie.magpie.ui.screens.profile.UserProfileViewType
-import com.magpie.magpie.ui.screens.shell.MagpieBottomNav
+import com.magpie.magpie.ui.screens.profile.UserListScreen
+import com.magpie.magpie.ui.screens.search.SearchScreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -55,49 +58,10 @@ fun MagpieNavGraph() {
     val userProfileRepository = remember(context) {
         UserProfileRepository(authApiService, tokenManager, reviewRepository)
     }
-    val startDestination = remember(tokenManager) {
-        if (tokenManager.hasValidToken()) Screen.Feed.route else Screen.Login.route
-    }
+    val startDestination = Screen.Login.route
     val scope = rememberCoroutineScope()
     var authErrorCode by remember { mutableStateOf<String?>(null) }
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-    val showBottomBar = currentRoute in setOf(
-        Screen.Feed.route,
-        Screen.Search.route,
-        Screen.MyProfile.route
-    )
-
-    Scaffold(
-        bottomBar = {
-            if (showBottomBar) {
-                MagpieBottomNav(
-                    currentDestination = currentRoute,
-                    onFeedClick = {
-                        navController.navigate(Screen.Feed.route) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onSearchClick = {
-                        navController.navigate(Screen.Search.route) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onProfileClick = {
-                        navController.navigate(Screen.MyProfile.route) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                )
-            }
-        }
-    ) { innerPadding: PaddingValues ->
+    Scaffold { innerPadding: PaddingValues ->
         NavHost(
             navController = navController,
             startDestination = startDestination
@@ -124,6 +88,23 @@ fun MagpieNavGraph() {
                 )
             }
 
+            composable(Screen.ProfileEdit.route) {
+                val viewModel = remember {
+                    UserProfileViewModel(repository = userProfileRepository, viewType = UserProfileViewType.ME)
+                }
+                val state = viewModel.uiState.collectAsState()
+                val profile = (state.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile
+                if (profile != null) {
+                    ProfileEditScreen(
+                        paddingValues = innerPadding,
+                        displayName = profile.displayName,
+                        bio = profile.bio,
+                        onSave = { displayName, bio -> viewModel.editProfile(displayName, bio) },
+                        onCancel = { navController.popBackStack() }
+                    )
+                }
+            }
+
             composable(Screen.Register.route) {
                 RegisterScreen(
                     paddingValues = innerPadding,
@@ -147,72 +128,9 @@ fun MagpieNavGraph() {
             }
 
             composable(Screen.Feed.route) {
-                val viewModel = remember {
-                    UserProfileViewModel(
-                        repository = userProfileRepository,
-                        viewType = UserProfileViewType.ME
-                    )
+                navController.navigate(Screen.Main.route) {
+                    popUpTo(Screen.Feed.route) { inclusive = true }
                 }
-                UserProfileScreen(
-                    paddingValues = innerPadding,
-                    viewModel = viewModel,
-                    onFollowersClick = {},
-                    onFollowingClick = {},
-                    onEditProfile = {},
-                    onLogout = {
-                        authErrorCode = null
-                        scope.launch { authRepository.logout() }
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(navController.graph.id) { inclusive = true }
-                        }
-                    }
-                )
-            }
-
-            composable(Screen.Search.route) {
-                val viewModel = remember {
-                    UserProfileViewModel(
-                        repository = userProfileRepository,
-                        viewType = UserProfileViewType.ME
-                    )
-                }
-                UserProfileScreen(
-                    paddingValues = innerPadding,
-                    viewModel = viewModel,
-                    onFollowersClick = {},
-                    onFollowingClick = {},
-                    onEditProfile = {},
-                    onLogout = {
-                        authErrorCode = null
-                        scope.launch { authRepository.logout() }
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(navController.graph.id) { inclusive = true }
-                        }
-                    }
-                )
-            }
-
-            composable(Screen.MyProfile.route) {
-                val viewModel = remember {
-                    UserProfileViewModel(
-                        repository = userProfileRepository,
-                        viewType = UserProfileViewType.ME
-                    )
-                }
-                UserProfileScreen(
-                    paddingValues = innerPadding,
-                    viewModel = viewModel,
-                    onFollowersClick = {},
-                    onFollowingClick = {},
-                    onEditProfile = {},
-                    onLogout = {
-                        authErrorCode = null
-                        scope.launch { authRepository.logout() }
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(navController.graph.id) { inclusive = true }
-                        }
-                    }
-                )
             }
 
             composable(
@@ -230,9 +148,38 @@ fun MagpieNavGraph() {
                 UserProfileScreen(
                     paddingValues = innerPadding,
                     viewModel = viewModel,
-                    onFollowersClick = {},
-                    onFollowingClick = {},
+                    onFollowersClick = { navController.navigate(Screen.ProfileFollowers.createRoute(userId)) },
+                    onFollowingClick = { navController.navigate(Screen.ProfileFollowing.createRoute(userId)) },
                     onEditProfile = {},
+                    onLogout = {}
+                )
+            }
+
+            composable(
+                route = Screen.ProfileFollowers.route,
+                arguments = listOf(navArgument("userId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                val state = remember { mutableStateOf(emptyList<com.magpie.magpie.data.auth.models.UserRead>()) }
+                LaunchedEffect(userId) {
+                    state.value = userProfileRepository.getFollowers(userId).items
+                }
+                UserListScreen(paddingValues = innerPadding, title = "Followers", users = state.value)
+            }
+
+            composable(
+                route = Screen.ProfileFollowing.route,
+                arguments = listOf(navArgument("userId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                val state = remember { mutableStateOf(emptyList<com.magpie.magpie.data.auth.models.UserRead>()) }
+                LaunchedEffect(userId) {
+                    state.value = userProfileRepository.getFollowing(userId).items
+                }
+                UserListScreen(paddingValues = innerPadding, title = "Following", users = state.value)
+            }
+
+            composable(
                 route = "${Screen.Main.route}/{username}",
                 arguments = listOf(navArgument("username") { type = NavType.StringType })
             ) { backStackEntry ->
@@ -245,6 +192,35 @@ fun MagpieNavGraph() {
                         navController.navigate(Screen.Login.route) {
                             popUpTo(navController.graph.id) { inclusive = true }
                         }
+                    },
+                    searchScreen = {
+                        SearchScreen(
+                            paddingValues = innerPadding,
+                            onUserClick = { userId -> navController.navigate(Screen.UserProfile.createRoute(userId)) },
+                            searchUsers = { query -> userProfileRepository.searchUsers(query).items }
+                        )
+                    },
+                    profileScreen = {
+                        val viewModel = remember {
+                            UserProfileViewModel(
+                                repository = userProfileRepository,
+                                viewType = UserProfileViewType.ME
+                            )
+                        }
+                        UserProfileScreen(
+                            paddingValues = innerPadding,
+                            viewModel = viewModel,
+                            onFollowersClick = { navController.navigate(Screen.ProfileFollowers.createRoute((viewModel.uiState.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile?.id ?: 0)) },
+                            onFollowingClick = { navController.navigate(Screen.ProfileFollowing.createRoute((viewModel.uiState.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile?.id ?: 0)) },
+                            onEditProfile = { navController.navigate(Screen.ProfileEdit.route) },
+                            onLogout = {
+                                authErrorCode = null
+                                scope.launch { authRepository.logout() }
+                                navController.navigate(Screen.Login.route) {
+                                    popUpTo(navController.graph.id) { inclusive = true }
+                                }
+                            }
+                        )
                     }
                 )
             }

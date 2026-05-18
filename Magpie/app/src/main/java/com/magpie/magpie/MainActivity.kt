@@ -2,6 +2,7 @@ package com.magpie.magpie
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.magpie.magpie.navigation.MagpieNavGraph

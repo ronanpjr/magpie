@@ -8,6 +8,14 @@ sealed class Screen(val route: String) {
     data object MyProfile : Screen("profile/me")
     data object UserProfile : Screen("profile/{userId}") {
         fun createRoute(userId: Int): String = "profile/$userId"
+    }
+    data object ProfileEdit : Screen("profile/edit")
+    data object ProfileFollowers : Screen("profile/{userId}/followers") {
+        fun createRoute(userId: Int): String = "profile/$userId/followers"
+    }
+    data object ProfileFollowing : Screen("profile/{userId}/following") {
+        fun createRoute(userId: Int): String = "profile/$userId/following"
+    }
 
     /** Shell principal com bottom bar; `username` vem do login. */
     data object Main : Screen("main")
