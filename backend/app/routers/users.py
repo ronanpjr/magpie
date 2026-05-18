@@ -55,6 +55,35 @@ def update_me(payload: UserUpdate, current_user: User = Depends(get_current_user
     return _to_user_read(db, current_user, current_user.id)
 
 
+@router.get("/search", response_model=Page[UserRead])
+def search_users(
+    q: str = Query(..., min_length=1),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Page[UserRead]:
+    MAX_RESULTS = 100
+    # Search query is case-insensitive, matches both username and display_name
+    search_term = f"%{q}%"
+    query = select(User).where(
+        (User.username.ilike(search_term)) | (User.display_name.ilike(search_term))
+    )
+    rows = db.exec(query).all()
+    total = min(len(rows), MAX_RESULTS)
+    # Limit results to MAX_RESULTS and then apply pagination
+    limited_rows = rows[:MAX_RESULTS]
+    sliced = limited_rows[(page - 1) * limit : page * limit]
+    items = [_to_user_read(db, user, current_user.id) for user in sliced]
+    return Page[UserRead](
+        items=items,
+        total=total,
+        page=page,
+        limit=limit,
+        pages=max(1, (total + limit - 1) // limit),
+    )
+
+
 @router.get("/{user_id}", response_model=UserRead)
 def read_user(user_id: int, viewer: User | None = Depends(get_optional_user), db: Session = Depends(get_db)) -> UserRead:
     user = db.get(User, user_id)
