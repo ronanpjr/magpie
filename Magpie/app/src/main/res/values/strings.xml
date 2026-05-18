@@ -20,9 +20,11 @@
     <string name="auth_error_user_not_found">Usuário não encontrado.</string>
     <string name="auth_error_invalid_credentials">Credenciais inválidas.</string>
     <string name="auth_error_password_mismatch">As senhas não coincidem.</string>
-    <string name="nav_feed">Feed</string>
-    <string name="nav_search">Buscar</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_rate">Avaliar</string>
     <string name="nav_profile">Perfil</string>
+    <string name="nav_more">Mais</string>
     <string name="profile_label_followers">Seguidores</string>
     <string name="profile_label_following">Seguindo</string>
     <string name="profile_label_bio">Bio</string>
@@ -54,10 +56,4 @@
     <string name="profile_review_placeholder_subtitle_three">Ari Nova · 2021</string>
     <string name="profile_review_placeholder_body_three">Texturas orgânicas com uma batida precisa, sem perder o clima noturno.</string>
     <string name="profile_review_placeholder_rating_three">3.5</string>
-</resources>
-    <string name="nav_home">Home</string>
-    <string name="nav_search">Pesquisar</string>
-    <string name="nav_rate">Avaliar</string>
-    <string name="nav_profile">Perfil</string>
-    <string name="nav_more">Mais</string>
 </resources>

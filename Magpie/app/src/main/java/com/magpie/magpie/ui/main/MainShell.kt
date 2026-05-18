@@ -22,7 +22,9 @@ import com.magpie.magpie.navigation.MainTab
 @Composable
 fun MainShell(
     username: String,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    profileScreen: @Composable () -> Unit,
+    searchScreen: @Composable () -> Unit
 ) {
     val innerNav = rememberNavController()
 
@@ -65,13 +67,13 @@ fun MainShell(
                 TabPlaceholderScreen(titleRes = R.string.nav_home)
             }
             composable(MainTab.Search.route) {
-                TabPlaceholderScreen(titleRes = R.string.nav_search)
+                searchScreen()
             }
             composable(MainTab.Rate.route) {
                 TabPlaceholderScreen(titleRes = R.string.nav_rate)
             }
             composable(MainTab.Profile.route) {
-                TabPlaceholderScreen(titleRes = R.string.nav_profile)
+                profileScreen()
             }
             composable(MainTab.More.route) {
                 TabPlaceholderScreen(titleRes = R.string.nav_more)

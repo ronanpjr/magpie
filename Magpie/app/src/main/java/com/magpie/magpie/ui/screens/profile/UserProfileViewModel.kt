@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.magpie.magpie.data.auth.models.UserRead
 import com.magpie.magpie.data.profile.UserProfileRepository
+import retrofit2.HttpException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,7 +13,7 @@ import kotlinx.coroutines.launch
 sealed class UserProfileUiState {
     object Loading : UserProfileUiState()
     data class Success(val profile: UserProfileUiModel) : UserProfileUiState()
-    data class Error(val message: String) : UserProfileUiState()
+    data class Error(val message: String, val isUnauthorized: Boolean = false) : UserProfileUiState()
 }
 
 class UserProfileViewModel(
@@ -49,19 +50,30 @@ class UserProfileViewModel(
                 
                 _uiState.value = UserProfileUiState.Success(userRead.toUiModel(reviews))
             } catch (e: Exception) {
-                _uiState.value = UserProfileUiState.Error(e.message ?: "Unknown error")
+                _uiState.value = UserProfileUiState.Error(
+                    message = e.message ?: "Unknown error",
+                    isUnauthorized = e is HttpException && e.code() == 401
+                )
             }
         }
     }
 
     fun followToggle() {
-        // TODO: Implement follow/unfollow API call
         val currentState = _uiState.value
         if (currentState is UserProfileUiState.Success) {
-            val updatedProfile = currentState.profile.copy(
-                isFollowing = !currentState.profile.isFollowing
-            )
-            _uiState.value = UserProfileUiState.Success(updatedProfile)
+            viewModelScope.launch {
+                try {
+                    val targetUserId = userId ?: currentState.profile.id
+                    if (currentState.profile.isFollowing) {
+                        repository.unfollowUser(targetUserId)
+                    } else {
+                        repository.followUser(targetUserId)
+                    }
+                    loadProfile()
+                } catch (e: Exception) {
+                    _uiState.value = UserProfileUiState.Error(e.message ?: "Failed to update follow state")
+                }
+            }
         }
     }
 
@@ -90,7 +102,12 @@ class UserProfileViewModel(
         }
     }
 
+    fun refresh() {
+        loadProfile()
+    }
+
     private fun UserRead.toUiModel(reviews: List<com.magpie.magpie.data.review.models.ReviewReadDto> = emptyList()): UserProfileUiModel = UserProfileUiModel(
+        id = this.id,
         displayName = this.displayName,
         username = this.username,
         bio = this.bio,

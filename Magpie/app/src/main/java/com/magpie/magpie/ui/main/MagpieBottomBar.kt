@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -64,6 +65,7 @@ fun MagpieBottomBar(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
+            .navigationBarsPadding()
             .height(80.dp)
     ) {
         val wPx = with(density) { maxWidth.toPx() }
@@ -207,6 +209,7 @@ private fun MainTab.outlinedIcon(): ImageVector = when (this) {
     MainTab.Rate -> Icons.Outlined.Add
     MainTab.Profile -> Icons.Outlined.AccountCircle
     MainTab.More -> Icons.Outlined.Menu
+    else -> Icons.Outlined.Circle
 }
 
 private val MainTab.labelRes: Int
@@ -216,4 +219,5 @@ private val MainTab.labelRes: Int
         MainTab.Rate -> R.string.nav_rate
         MainTab.Profile -> R.string.nav_profile
         MainTab.More -> R.string.nav_more
+        else -> R.string.nav_more
     }

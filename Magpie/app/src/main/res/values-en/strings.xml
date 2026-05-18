@@ -20,9 +20,11 @@
     <string name="auth_error_user_not_found">User not found.</string>
     <string name="auth_error_invalid_credentials">Invalid credentials.</string>
     <string name="auth_error_password_mismatch">Passwords do not match.</string>
-    <string name="nav_feed">Feed</string>
+    <string name="nav_home">Home</string>
     <string name="nav_search">Search</string>
+    <string name="nav_rate">Rate</string>
     <string name="nav_profile">Profile</string>
+    <string name="nav_more">More</string>
     <string name="profile_label_followers">Followers</string>
     <string name="profile_label_following">Following</string>
     <string name="profile_label_bio">Bio</string>
