@@ -202,25 +202,6 @@ private fun AlbumContent(
                             )
                         }
                     }
-
-                    // Floating Bell button on the right
-                    IconButton(
-                        onClick = { isSubscribed = !isSubscribed },
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.primary
-                        ),
-                        modifier = Modifier
-                            .size(44.dp)
-                            .align(Alignment.CenterEnd)
-                            .clip(CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = if (isSubscribed) Icons.Default.NotificationsActive else Icons.Default.Notifications,
-                            contentDescription = "Subscribe",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
                 }
             }
 
@@ -292,20 +273,6 @@ private fun AlbumContent(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Nota Crítica
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = stringResource(R.string.catalog_critical_rating_label),
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        StarRatingRow(rating = album.avgRating)
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
 
                     // Nota Geral
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
