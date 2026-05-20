@@ -21,8 +21,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Star
@@ -256,35 +256,6 @@ private fun AlbumContent(
             }
 
             item {
-                // Description Card
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        val albumDescription = stringResource(
-                            R.string.catalog_album_desc_fallback,
-                            album.title,
-                            album.artistName,
-                            album.releaseDate?.take(4) ?: ""
-                        )
-                        Text(
-                            text = albumDescription,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
-                            lineHeight = 22.sp
-                        )
-                    }
-                }
-            }
-
-            item {
                 Spacer(modifier = Modifier.height(8.dp))
                 // Note Section
                 Column(
@@ -480,8 +451,8 @@ private fun TrackCard(
                 )
             ) {
                 Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Track Actions"
+                    imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
+                    contentDescription = "Add to Playlist"
                 )
             }
         }

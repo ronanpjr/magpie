@@ -50,7 +50,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.magpie.magpie.R
 import com.magpie.magpie.data.catalog.models.ArtistReadDto
@@ -229,30 +228,6 @@ private fun ArtistContent(
                     ),
                     textAlign = TextAlign.Center
                 )
-            }
-
-            item {
-                // Biography Card style menta
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        val defaultBio = stringResource(R.string.catalog_artist_bio_fallback, artist.name)
-                        Text(
-                            text = defaultBio,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
-                            lineHeight = 22.sp
-                        )
-                    }
-                }
             }
 
             item {
