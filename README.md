@@ -24,7 +24,8 @@ The app uses `BuildConfig.BASE_URL` to talk to the backend.
 
 
 ## Production backend
-The backend is acessible via the url ![here](https://magpieapp.duckdns.org/docs)
+The backend is acessible via the url [here](https://magpieapp.duckdns.org/docs)
+
 You can run only the app via Android Studio and use the production enviroment API.
 
 ## Run the backend locally
