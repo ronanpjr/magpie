@@ -1,6 +1,5 @@
 package com.magpie.magpie.navigation
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -10,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavType
@@ -29,10 +29,10 @@ import com.magpie.magpie.ui.main.MainShell
 import com.magpie.magpie.ui.screens.auth.LoginScreen
 import com.magpie.magpie.ui.screens.auth.RegisterScreen
 import com.magpie.magpie.ui.screens.profile.ProfileEditScreen
+import com.magpie.magpie.ui.screens.profile.UserListScreen
 import com.magpie.magpie.ui.screens.profile.UserProfileScreen
 import com.magpie.magpie.ui.screens.profile.UserProfileViewModel
 import com.magpie.magpie.ui.screens.profile.UserProfileViewType
-import com.magpie.magpie.ui.screens.profile.UserListScreen
 import com.magpie.magpie.ui.screens.search.SearchScreen
 import com.magpie.magpie.data.catalog.CatalogRepository
 import com.magpie.magpie.data.catalog.api.CatalogApiService
@@ -100,23 +100,6 @@ fun MagpieNavGraph() {
                 )
             }
 
-            composable(Screen.ProfileEdit.route) {
-                val viewModel = remember {
-                    UserProfileViewModel(repository = userProfileRepository, viewType = UserProfileViewType.ME)
-                }
-                val state = viewModel.uiState.collectAsState()
-                val profile = (state.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile
-                if (profile != null) {
-                    ProfileEditScreen(
-                        paddingValues = innerPadding,
-                        displayName = profile.displayName,
-                        bio = profile.bio,
-                        onSave = { displayName, bio -> viewModel.editProfile(displayName, bio) },
-                        onCancel = { navController.popBackStack() }
-                    )
-                }
-            }
-
             composable(Screen.Register.route) {
                 RegisterScreen(
                     paddingValues = innerPadding,
@@ -139,12 +122,6 @@ fun MagpieNavGraph() {
                 )
             }
 
-            composable(Screen.Feed.route) {
-                navController.navigate(Screen.Main.route) {
-                    popUpTo(Screen.Feed.route) { inclusive = true }
-                }
-            }
-
             composable(
                 route = Screen.UserProfile.route,
                 arguments = listOf(navArgument("userId") { type = NavType.IntType })
@@ -160,35 +137,11 @@ fun MagpieNavGraph() {
                 UserProfileScreen(
                     paddingValues = innerPadding,
                     viewModel = viewModel,
-                    onFollowersClick = { navController.navigate(Screen.ProfileFollowers.createRoute(userId)) },
-                    onFollowingClick = { navController.navigate(Screen.ProfileFollowing.createRoute(userId)) },
-                    onEditProfile = {},
+                    onFollowersClick = { },
+                    onFollowingClick = { },
+                    onEditProfile = { },
                     onLogout = {}
                 )
-            }
-
-            composable(
-                route = Screen.ProfileFollowers.route,
-                arguments = listOf(navArgument("userId") { type = NavType.IntType })
-            ) { backStackEntry ->
-                val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                val state = remember { mutableStateOf(emptyList<com.magpie.magpie.data.auth.models.UserRead>()) }
-                LaunchedEffect(userId) {
-                    state.value = userProfileRepository.getFollowers(userId).items
-                }
-                UserListScreen(paddingValues = innerPadding, title = "Followers", users = state.value)
-            }
-
-            composable(
-                route = Screen.ProfileFollowing.route,
-                arguments = listOf(navArgument("userId") { type = NavType.IntType })
-            ) { backStackEntry ->
-                val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                val state = remember { mutableStateOf(emptyList<com.magpie.magpie.data.auth.models.UserRead>()) }
-                LaunchedEffect(userId) {
-                    state.value = userProfileRepository.getFollowing(userId).items
-                }
-                UserListScreen(paddingValues = innerPadding, title = "Following", users = state.value)
             }
 
             composable(
@@ -205,17 +158,7 @@ fun MagpieNavGraph() {
                             popUpTo(navController.graph.id) { inclusive = true }
                         }
                     },
-                    searchScreen = {
-                        SearchScreen(
-                            paddingValues = innerPadding,
-                            onUserClick = { userId -> navController.navigate(Screen.UserProfile.createRoute(userId)) },
-                            onArtistClick = { artistId -> navController.navigate(Screen.ArtistDetail.createRoute(artistId)) },
-                            onAlbumClick = { albumId -> navController.navigate(Screen.AlbumDetail.createRoute(albumId)) },
-                            searchUsers = { query -> userProfileRepository.searchUsers(query).items },
-                            searchCatalog = { query, type -> catalogRepository.search(query, type) }
-                        )
-                    },
-                    profileScreen = {
+                    profileScreen = { onEditProfile, onFollowersClick, onFollowingClick ->
                         val viewModel = remember {
                             UserProfileViewModel(
                                 repository = userProfileRepository,
@@ -225,9 +168,15 @@ fun MagpieNavGraph() {
                         UserProfileScreen(
                             paddingValues = innerPadding,
                             viewModel = viewModel,
-                            onFollowersClick = { navController.navigate(Screen.ProfileFollowers.createRoute((viewModel.uiState.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile?.id ?: 0)) },
-                            onFollowingClick = { navController.navigate(Screen.ProfileFollowing.createRoute((viewModel.uiState.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile?.id ?: 0)) },
-                            onEditProfile = { navController.navigate(Screen.ProfileEdit.route) },
+                            onFollowersClick = {
+                                val profile = (viewModel.uiState.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile
+                                profile?.let { onFollowersClick(it.id) }
+                            },
+                            onFollowingClick = {
+                                val profile = (viewModel.uiState.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile
+                                profile?.let { onFollowingClick(it.id) }
+                            },
+                            onEditProfile = onEditProfile,
                             onLogout = {
                                 authErrorCode = null
                                 scope.launch { authRepository.logout() }
@@ -236,42 +185,68 @@ fun MagpieNavGraph() {
                                 }
                             }
                         )
-                    }
-                )
-            }
-
-            composable(
-                route = Screen.ArtistDetail.route,
-                arguments = listOf(navArgument("artistId") { type = NavType.IntType })
-            ) { backStackEntry ->
-                val artistId = backStackEntry.arguments?.getInt("artistId") ?: 0
-                val viewModel = remember(artistId) {
-                    ArtistViewModel(catalogRepository = catalogRepository, artistId = artistId)
-                }
-                ArtistScreen(
-                    paddingValues = innerPadding,
-                    viewModel = viewModel,
-                    onAlbumClick = { albumId -> navController.navigate(Screen.AlbumDetail.createRoute(albumId)) },
-                    onBackClick = { navController.popBackStack() }
-                )
-            }
-
-            composable(
-                route = Screen.AlbumDetail.route,
-                arguments = listOf(navArgument("albumId") { type = NavType.IntType })
-            ) { backStackEntry ->
-                val albumId = backStackEntry.arguments?.getInt("albumId") ?: 0
-                val viewModel = remember(albumId) {
-                    AlbumViewModel(catalogRepository = catalogRepository, reviewRepository = reviewRepository, albumId = albumId)
-                }
-                AlbumScreen(
-                    paddingValues = innerPadding,
-                    viewModel = viewModel,
-                    onArtistClick = { artistId -> navController.navigate(Screen.ArtistDetail.createRoute(artistId)) },
-                    onWriteReviewClick = { albumId ->
-                        android.widget.Toast.makeText(context, "Avaliar álbum $albumId (em breve)", android.widget.Toast.LENGTH_SHORT).show()
                     },
-                    onBackClick = { navController.popBackStack() }
+                    profileEditScreen = { padding, onCancel ->
+                        val viewModel = remember {
+                            UserProfileViewModel(repository = userProfileRepository, viewType = UserProfileViewType.ME)
+                        }
+                        val state = viewModel.uiState.collectAsState()
+                        val profile = (state.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile
+                        if (profile != null) {
+                            ProfileEditScreen(
+                                paddingValues = padding,
+                                displayName = profile.displayName,
+                                bio = profile.bio,
+                                onSave = { displayName, bio -> viewModel.editProfile(displayName, bio) },
+                                onCancel = onCancel
+                            )
+                        }
+                    },
+                    followersScreen = { padding, userId ->
+                        val state = remember { mutableStateOf(emptyList<com.magpie.magpie.data.auth.models.UserRead>()) }
+                        LaunchedEffect(userId) {
+                            state.value = userProfileRepository.getFollowers(userId).items
+                        }
+                        UserListScreen(paddingValues = padding, title = "Followers", users = state.value)
+                    },
+                    followingScreen = { padding, userId ->
+                        val state = remember { mutableStateOf(emptyList<com.magpie.magpie.data.auth.models.UserRead>()) }
+                        LaunchedEffect(userId) {
+                            state.value = userProfileRepository.getFollowing(userId).items
+                        }
+                        UserListScreen(paddingValues = padding, title = "Following", users = state.value)
+                    },
+                    artistScreen = { padding, artistId, onBackClick, onAlbumClick ->
+                        val viewModel = remember(artistId) { ArtistViewModel(catalogRepository = catalogRepository, artistId = artistId) }
+                        ArtistScreen(
+                            paddingValues = padding,
+                            viewModel = viewModel,
+                            onAlbumClick = onAlbumClick,
+                            onBackClick = onBackClick
+                        )
+                    },
+                    albumScreen = { padding, albumId, onBackClick, onArtistClick ->
+                        val viewModel = remember(albumId) {
+                            AlbumViewModel(catalogRepository = catalogRepository, reviewRepository = reviewRepository, albumId = albumId)
+                        }
+                        AlbumScreen(
+                            paddingValues = padding,
+                            viewModel = viewModel,
+                            onArtistClick = onArtistClick,
+                            onWriteReviewClick = { id -> android.widget.Toast.makeText(context, "Avaliar álbum $id (em breve)", android.widget.Toast.LENGTH_SHORT).show() },
+                            onBackClick = onBackClick
+                        )
+                    },
+                    searchScreen = { onArtistClick, onAlbumClick ->
+                        SearchScreen(
+                            paddingValues = innerPadding,
+                            onUserClick = { userId -> navController.navigate(Screen.UserProfile.createRoute(userId)) },
+                            onArtistClick = { artistId -> onArtistClick(artistId) },
+                            onAlbumClick = { albumId -> onAlbumClick(albumId) },
+                            searchUsers = { query -> userProfileRepository.searchUsers(query).items },
+                            searchCatalog = { query, type -> catalogRepository.search(query, type) }
+                        )
+                    }
                 )
             }
         }
