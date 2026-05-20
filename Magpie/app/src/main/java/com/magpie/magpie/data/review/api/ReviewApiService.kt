@@ -18,4 +18,15 @@ interface ReviewApiService {
         @Header("Authorization")
         token: String
     ): PageDto<ReviewReadDto>
+
+    @GET("reviews")
+    suspend fun getReviews(
+        @Query("target_type") targetType: String? = null,
+        @Query("target_id") targetId: Int? = null,
+        @Query("author_id") authorId: Int? = null,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20,
+        @Query("order_by") orderBy: String = "recent",
+        @Header("Authorization") token: String
+    ): PageDto<ReviewReadDto>
 }
