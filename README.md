@@ -1,24 +1,9 @@
 # Magpie
 
-Magpie is a music review app with two parts:
-
-- `Magpie/` - Android app built with Kotlin, Jetpack Compose, Hilt, Room, Retrofit, and Navigation
-- `backend/` - FastAPI backend that provides authentication, catalog search, reviews, profiles, and feed APIs
-
-## What it does
-
-The Android app lets users:
-
-- register and log in
-- search artists, albums, and tracks
-- view profiles and follow other users
-- browse reviews and feeds
-
-The backend handles:
-
-- user authentication and profile data
-- catalog lookup through external music services
-- reviews, likes, followers, and feed data
+Members: 
+821620 - Melissa Shimada
+824387 - Pedro Sakai
+821626 - Ronan Pereira
 
 ## Requirements
 
