@@ -2,7 +2,9 @@
 
 Members: 
 821620 - Melissa Shimada
+
 824387 - Pedro Sakai
+
 821626 - Ronan Pereira
 
 ## Requirements
