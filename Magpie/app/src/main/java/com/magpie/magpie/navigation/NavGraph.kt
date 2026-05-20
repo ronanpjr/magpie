@@ -25,6 +25,8 @@ import com.magpie.magpie.data.network.RetrofitClient
 import com.magpie.magpie.data.profile.UserProfileRepository
 import com.magpie.magpie.data.review.ReviewRepository
 import com.magpie.magpie.data.review.api.ReviewApiService
+import com.magpie.magpie.data.catalog.CatalogRepository
+import com.magpie.magpie.data.catalog.api.CatalogApiService
 import com.magpie.magpie.ui.main.MainShell
 import com.magpie.magpie.ui.screens.auth.LoginScreen
 import com.magpie.magpie.ui.screens.auth.RegisterScreen
@@ -42,6 +44,10 @@ import com.magpie.magpie.ui.screens.reviewcomments.ReviewCommentsScreen
 import com.magpie.magpie.ui.screens.reviewcomments.ReviewCommentsViewModel
 import com.magpie.magpie.ui.screens.reviewdetail.ReviewDetailScreen
 import com.magpie.magpie.ui.screens.reviewdetail.ReviewDetailViewModel
+import com.magpie.magpie.ui.screens.catalog.ArtistScreen
+import com.magpie.magpie.ui.screens.catalog.ArtistViewModel
+import com.magpie.magpie.ui.screens.catalog.AlbumScreen
+import com.magpie.magpie.ui.screens.catalog.AlbumViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -49,26 +55,41 @@ fun MagpieNavGraph() {
     val navController = rememberNavController()
     val context = LocalContext.current
     val tokenManager = remember(context) { TokenManager(context.applicationContext) }
+
     val authRepository = remember(context) {
         RetrofitClient.initialize(context.applicationContext, tokenManager)
         val authApiService = RetrofitClient.createService(AuthApiService::class.java)
         RemoteAuthRepository(authApiService, tokenManager)
     }
+
     val authApiService = remember(context) {
         RetrofitClient.createService(AuthApiService::class.java)
     }
+
     val reviewApiService = remember(context) {
         RetrofitClient.createService(ReviewApiService::class.java)
     }
+
     val reviewRepository = remember(context) {
-        ReviewRepository(reviewApiService)
+        ReviewRepository(reviewApiService, tokenManager)
     }
+
     val userProfileRepository = remember(context) {
         UserProfileRepository(authApiService, tokenManager, reviewRepository)
     }
+
+    val catalogApiService = remember(context) {
+        RetrofitClient.createService(CatalogApiService::class.java)
+    }
+
+    val catalogRepository = remember(context) {
+        CatalogRepository(catalogApiService)
+    }
+
     val startDestination = Screen.Login.route
     val scope = rememberCoroutineScope()
     var authErrorCode by remember { mutableStateOf<String?>(null) }
+
     Scaffold { innerPadding: PaddingValues ->
         NavHost(
             navController = navController,
@@ -94,23 +115,6 @@ fun MagpieNavGraph() {
                     },
                     errorMessage = authErrorCode.asErrorMessage()
                 )
-            }
-
-            composable(Screen.ProfileEdit.route) {
-                val viewModel = remember {
-                    UserProfileViewModel(repository = userProfileRepository, viewType = UserProfileViewType.ME)
-                }
-                val state = viewModel.uiState.collectAsState()
-                val profile = (state.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile
-                if (profile != null) {
-                    ProfileEditScreen(
-                        paddingValues = innerPadding,
-                        displayName = profile.displayName,
-                        bio = profile.bio,
-                        onSave = { displayName, bio -> viewModel.editProfile(displayName, bio) },
-                        onCancel = { navController.popBackStack() }
-                    )
-                }
             }
 
             composable(Screen.Register.route) {
@@ -260,9 +264,7 @@ fun MagpieNavGraph() {
                         }
                     },
                     homeScreen = {
-                        val feedViewModel = remember {
-                            FeedViewModel(reviewRepository)
-                        }
+                        val feedViewModel = remember { FeedViewModel(reviewRepository) }
                         HomeScreen(
                             paddingValues = innerPadding,
                             viewModel = feedViewModel,
@@ -271,14 +273,7 @@ fun MagpieNavGraph() {
                             }
                         )
                     },
-                    searchScreen = {
-                        SearchScreen(
-                            paddingValues = innerPadding,
-                            onUserClick = { userId -> navController.navigate(Screen.UserProfile.createRoute(userId)) },
-                            searchUsers = { query -> userProfileRepository.searchUsers(query).items }
-                        )
-                    },
-                    profileScreen = {
+                    profileScreen = { onEditProfile, onFollowersClick, onFollowingClick ->
                         val viewModel = remember {
                             UserProfileViewModel(
                                 repository = userProfileRepository,
@@ -288,9 +283,15 @@ fun MagpieNavGraph() {
                         UserProfileScreen(
                             paddingValues = innerPadding,
                             viewModel = viewModel,
-                            onFollowersClick = { navController.navigate(Screen.ProfileFollowers.createRoute((viewModel.uiState.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile?.id ?: 0)) },
-                            onFollowingClick = { navController.navigate(Screen.ProfileFollowing.createRoute((viewModel.uiState.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile?.id ?: 0)) },
-                            onEditProfile = { navController.navigate(Screen.ProfileEdit.route) },
+                            onFollowersClick = {
+                                val profile = (viewModel.uiState.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile
+                                profile?.let { onFollowersClick(it.id) }
+                            },
+                            onFollowingClick = {
+                                val profile = (viewModel.uiState.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile
+                                profile?.let { onFollowingClick(it.id) }
+                            },
+                            onEditProfile = onEditProfile,
                             onLogout = {
                                 authErrorCode = null
                                 scope.launch { authRepository.logout() }
@@ -301,6 +302,82 @@ fun MagpieNavGraph() {
                             onReviewClick = { reviewId ->
                                 navController.navigate(Screen.ReviewDetail.createRoute(reviewId))
                             }
+                        )
+                    },
+                    profileEditScreen = { padding, onCancel ->
+                        val viewModel = remember {
+                            UserProfileViewModel(repository = userProfileRepository, viewType = UserProfileViewType.ME)
+                        }
+                        val state = viewModel.uiState.collectAsState()
+                        val profile = (state.value as? com.magpie.magpie.ui.screens.profile.UserProfileUiState.Success)?.profile
+                        if (profile != null) {
+                            ProfileEditScreen(
+                                paddingValues = padding,
+                                displayName = profile.displayName,
+                                bio = profile.bio,
+                                onSave = { displayName, bio -> viewModel.editProfile(displayName, bio) },
+                                onCancel = onCancel
+                            )
+                        }
+                    },
+                    followersScreen = { padding, userId ->
+                        val state = remember { mutableStateOf(emptyList<com.magpie.magpie.data.auth.models.UserRead>()) }
+                        LaunchedEffect(userId) {
+                            state.value = userProfileRepository.getFollowers(userId).items
+                        }
+                        UserListScreen(paddingValues = padding, title = "Followers", users = state.value)
+                    },
+                    followingScreen = { padding, userId ->
+                        val state = remember { mutableStateOf(emptyList<com.magpie.magpie.data.auth.models.UserRead>()) }
+                        LaunchedEffect(userId) {
+                            state.value = userProfileRepository.getFollowing(userId).items
+                        }
+                        UserListScreen(paddingValues = padding, title = "Following", users = state.value)
+                    },
+                    artistScreen = { padding, artistId, onBackClick, onAlbumClick ->
+                        val viewModel = remember(artistId) { ArtistViewModel(catalogRepository = catalogRepository, artistId = artistId) }
+                        ArtistScreen(
+                            paddingValues = padding,
+                            viewModel = viewModel,
+                            onAlbumClick = onAlbumClick,
+                            onBackClick = onBackClick
+                        )
+                    },
+                    albumScreen = { padding, albumId, onBackClick, onArtistClick, onTrackClick ->
+                        val viewModel = remember(albumId) {
+                            AlbumViewModel(catalogRepository = catalogRepository, reviewRepository = reviewRepository, albumId = albumId)
+                        }
+                        AlbumScreen(
+                            paddingValues = padding,
+                            viewModel = viewModel,
+                            onArtistClick = onArtistClick,
+                            onWriteReviewClick = { id -> android.widget.Toast.makeText(context, "Avaliar álbum $id (em breve)", android.widget.Toast.LENGTH_SHORT).show() },
+                            onBackClick = onBackClick,
+                            onTrackClick = onTrackClick
+                        )
+                    },
+                    trackScreen = { padding, trackId, onBackClick, onArtistClick, onAlbumClick ->
+                        val viewModel = remember(trackId) {
+                            com.magpie.magpie.ui.screens.catalog.TrackViewModel(catalogRepository = catalogRepository, reviewRepository = reviewRepository, trackId = trackId)
+                        }
+                        com.magpie.magpie.ui.screens.catalog.TrackScreen(
+                            paddingValues = padding,
+                            viewModel = viewModel,
+                            onArtistClick = onArtistClick,
+                            onAlbumClick = onAlbumClick,
+                            onWriteReviewClick = { id -> android.widget.Toast.makeText(context, "Avaliar música $id (em breve)", android.widget.Toast.LENGTH_SHORT).show() },
+                            onBackClick = onBackClick
+                        )
+                    },
+                    searchScreen = { onArtistClick, onAlbumClick, onTrackClick ->
+                        SearchScreen(
+                            paddingValues = innerPadding,
+                            onUserClick = { userId -> navController.navigate(Screen.UserProfile.createRoute(userId)) },
+                            onArtistClick = { artistId -> onArtistClick(artistId) },
+                            onAlbumClick = { albumId -> onAlbumClick(albumId) },
+                            onTrackClick = { trackId -> onTrackClick(trackId) },
+                            searchUsers = { query -> userProfileRepository.searchUsers(query).items },
+                            searchCatalog = { query, type -> catalogRepository.search(query, type) }
                         )
                     }
                 )

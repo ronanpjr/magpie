@@ -10,11 +10,23 @@ sealed class Screen(val route: String) {
         fun createRoute(userId: Int): String = "profile/$userId"
     }
     data object ProfileEdit : Screen("profile/edit")
-    data object ProfileFollowers : Screen("profile/{userId}/followers") {
-        fun createRoute(userId: Int): String = "profile/$userId/followers"
+    data object ProfileFollowers : Screen("profile/followers/{userId}") {
+        fun createRoute(userId: Int): String = "profile/followers/$userId"
     }
-    data object ProfileFollowing : Screen("profile/{userId}/following") {
-        fun createRoute(userId: Int): String = "profile/$userId/following"
+    data object ProfileFollowing : Screen("profile/following/{userId}") {
+        fun createRoute(userId: Int): String = "profile/following/$userId"
+    }
+
+    data object ArtistDetail : Screen("catalog/artist/{artistId}") {
+        fun createRoute(artistId: Int): String = "catalog/artist/$artistId"
+    }
+
+    data object AlbumDetail : Screen("catalog/album/{albumId}") {
+        fun createRoute(albumId: Int): String = "catalog/album/$albumId"
+    }
+
+    data object TrackDetail : Screen("catalog/track/{trackId}") {
+        fun createRoute(trackId: Int): String = "catalog/track/$trackId"
     }
 
     data object ReviewDetail : Screen("review/{reviewId}") {
@@ -43,5 +55,16 @@ sealed class MainTab(val route: String) {
 
     companion object {
         val entries: List<MainTab> = listOf(Home, Search, Rate, Profile, More)
+        
+        fun getTabByRoute(route: String?): MainTab {
+            if (route == null) return Home
+            return entries.find { it.route == route }
+                ?: when {
+                    route.startsWith("profile/") -> Profile
+                    route.startsWith("artist/") -> Search
+                    route.startsWith("album/") -> Search
+                    else -> Home
+                }
+        }
     }
 }

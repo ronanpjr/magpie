@@ -94,4 +94,16 @@
     <string name="create_review_error_empty_body">Write something before publishing.</string>
     <string name="create_review_error_already_exists">You have already reviewed this item.</string>
     <string name="create_review_publish">Publish</string>
+
+    <string name="error_generic">An error occurred</string>
+    <string name="catalog_artist_label">Artist</string>
+    <string name="catalog_artist_bio_fallback">Biography of the artist %1$s...</string>
+    <string name="catalog_discography_label">Discography</string>
+    <string name="catalog_discography_empty">No albums found.</string>
+    <string name="catalog_album_label">Album</string>
+    <string name="catalog_album_desc_fallback">Album %1$s by %2$s released in %3$s.</string>
+    <string name="catalog_general_rating_label">Rating</string>
+    <string name="catalog_action_rate">Rate</string>
+    <string name="catalog_tracks_label">Tracks</string>
+    <string name="catalog_tracks_empty">No tracks found.</string>
 </resources>

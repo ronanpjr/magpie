@@ -8,8 +8,9 @@ import com.magpie.magpie.data.auth.models.UserLogin
 import com.magpie.magpie.data.auth.token.TokenManager
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import retrofit2.HttpException
 
-class RemoteAuthRepository(
+class  RemoteAuthRepository(
     private val authApiService: AuthApiService,
     private val tokenManager: TokenManager
 ) : AuthRepository {
@@ -74,10 +75,20 @@ class RemoteAuthRepository(
                 accessToken = response.accessToken,
                 refreshToken = response.refreshToken
             )
+        } catch (e: HttpException) {
+            val errorMessage = when (e.code()) {
+                401 -> "INVALID_CREDENTIALS"  // Unauthorized - wrong password or invalid credentials
+                404 -> "USER_NOT_FOUND"        // Not Found - user doesn't exist
+                else -> "LOGIN_FAILED"
+            }
+            AuthResult(
+                success = false,
+                message = errorMessage
+            )
         } catch (e: Exception) {
             AuthResult(
                 success = false,
-                message = e.message ?: "LOGIN_FAILED"
+                message = "LOGIN_FAILED"
             )
         }
     }

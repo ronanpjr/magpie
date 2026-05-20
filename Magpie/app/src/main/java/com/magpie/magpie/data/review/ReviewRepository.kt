@@ -63,4 +63,26 @@ class ReviewRepository @Inject constructor(
     suspend fun unlikeReview(reviewId: Int) {
         reviewApiService.unlikeReview(reviewId)
     }
+
+    suspend fun getReviews(
+        targetType: String? = null,
+        targetId: Int? = null,
+        authorId: Int? = null,
+        page: Int = 1,
+        limit: Int = 20,
+        orderBy: String = "recent"
+    ): List<ReviewReadDto> {
+        val token = tokenManager.getAccessToken() ?: throw IllegalStateException("No access token available")
+        val bearerToken = "Bearer $token"
+        val pageDto = reviewApiService.getReviews(
+            targetType = targetType,
+            targetId = targetId,
+            authorId = authorId,
+            page = page,
+            limit = limit,
+            orderBy = orderBy,
+            token = bearerToken
+        )
+        return pageDto.items
+    }
 }

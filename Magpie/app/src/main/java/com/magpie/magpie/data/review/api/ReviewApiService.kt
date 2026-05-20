@@ -9,18 +9,34 @@ import com.magpie.magpie.data.review.models.ReviewReadDto
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ReviewApiService {
+    // Da main
     @GET("users/{userId}/reviews")
     suspend fun getUserReviews(
         @Path("userId") userId: Int,
         @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 20
+        @Query("limit") limit: Int = 20,
+        @Header("Authorization") token: String
     ): PageDto<ReviewReadDto>
 
+    // Da main
+    @GET("reviews")
+    suspend fun getReviews(
+        @Query("target_type") targetType: String? = null,
+        @Query("target_id") targetId: Int? = null,
+        @Query("author_id") authorId: Int? = null,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20,
+        @Query("order_by") orderBy: String = "recent",
+        @Header("Authorization") token: String
+    ): PageDto<ReviewReadDto>
+
+    // Da sua branch
     @GET("feed")
     suspend fun getFeed(
         @Query("page") page: Int = 1,
