@@ -42,6 +42,12 @@ Swagger: `http://localhost:8000/docs`
 - `GET /reviews` — list reviews
 - `POST /reviews` — create review
 - `GET /reviews/{id}` — review detail
+- `GET /reviews/{id}/comments` — list comments
+- `POST /reviews/{id}/comments` — add comment
+- `POST /reviews/{id}/comments/{comment_id}/vote` — vote on comment
+- `GET /review-comments/{id}` — list comments (flat path)
+- `POST /review-comments/{id}` — add comment (flat path)
+- `POST /review-comments/{id}/vote/{comment_id}` — vote (flat path)
 - `PUT /reviews/{id}` — edit review
 - `DELETE /reviews/{id}` — delete review
 - `POST /reviews/{id}/like` — like review

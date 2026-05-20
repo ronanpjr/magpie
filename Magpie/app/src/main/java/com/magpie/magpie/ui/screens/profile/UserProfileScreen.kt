@@ -68,7 +68,8 @@ fun UserProfileScreen(
     onFollowersClick: () -> Unit = {},
     onFollowingClick: () -> Unit = {},
     onEditProfile: () -> Unit = {},
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onReviewClick: (Int) -> Unit = {}
 ) {
     val uiState = viewModel.uiState.collectAsState()
 
@@ -116,16 +117,21 @@ fun UserProfileScreen(
                         )
                     }
                     items(profile.reviews) { review ->
-                        ReviewCard(review = review)
+                        ReviewCard(
+                            review = review,
+                            onClick = { onReviewClick(review.id) }
+                        )
                     }
-                    item {
-                        OutlinedButton(
-                            onClick = onLogout,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp, bottom = 40.dp)
-                        ) {
-                            Text(text = stringResource(R.string.profile_action_logout))
+                    if (viewModel.viewType == UserProfileViewType.ME) {
+                        item {
+                            OutlinedButton(
+                                onClick = onLogout,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp, bottom = 40.dp)
+                            ) {
+                                Text(text = stringResource(R.string.profile_action_logout))
+                            }
                         }
                     }
                 }
@@ -356,11 +362,16 @@ private fun ProfileBio(bio: String?) {
 }
 
 @Composable
-private fun ReviewCard(review: ReviewReadDto) {
+private fun ReviewCard(
+    review: ReviewReadDto,
+    onClick: () -> Unit
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

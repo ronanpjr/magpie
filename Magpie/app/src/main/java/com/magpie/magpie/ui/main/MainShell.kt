@@ -2,14 +2,13 @@ package com.magpie.magpie.ui.main
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -30,6 +29,7 @@ import com.magpie.magpie.navigation.MainTab
 fun MainShell(
     username: String,
     onLogout: () -> Unit,
+    homeScreen: @Composable () -> Unit,
     profileScreen: @Composable (onEditProfile: () -> Unit, onFollowersClick: (Int) -> Unit, onFollowingClick: (Int) -> Unit) -> Unit,
     profileEditScreen: @Composable (PaddingValues, () -> Unit) -> Unit,
     followersScreen: @Composable (PaddingValues, Int) -> Unit,
@@ -41,12 +41,42 @@ fun MainShell(
 ) {
     val innerNav = rememberNavController()
 
-    Scaffold(
-        bottomBar = {
-            val navBackStack by innerNav.currentBackStackEntryAsState()
-            val currentRoute = navBackStack?.destination?.route
-            val selectedTab = MainTab.getTabByRoute(currentRoute)
+    val navBackStack by innerNav.currentBackStackEntryAsState()
+    val currentRoute = navBackStack?.destination?.route
+    val selectedTab = MainTab.getTabByRoute(currentRoute) ?: MainTab.Home
 
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background
+                ),
+                title = {
+                    Text(
+                        text = when (selectedTab) {
+                            MainTab.Home -> stringResource(R.string.feed_screen_title)
+                            MainTab.Search -> stringResource(R.string.nav_search)
+                            MainTab.Rate -> stringResource(R.string.nav_rate)
+                            MainTab.Profile -> username
+                            MainTab.More -> stringResource(R.string.nav_more)
+                        },
+                        maxLines = 1,
+                        color = if (selectedTab == MainTab.Home) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                },
+                actions = {
+                    TextButton(onClick = onLogout) {
+                        Text(text = stringResource(R.string.auth_logout_action))
+                    }
+                }
+            )
+        },
+        bottomBar = {
             MagpieBottomBar(
                 selectedTab = selectedTab,
                 onTabSelected = { tab ->
@@ -67,7 +97,7 @@ fun MainShell(
             modifier = Modifier.padding(padding)
         ) {
             composable(MainTab.Home.route) {
-                TabPlaceholderScreen(titleRes = R.string.nav_home)
+                homeScreen()
             }
             composable(MainTab.Search.route) {
                 searchScreen({ innerNav.navigate("artist/$it") }, { innerNav.navigate("album/$it") }, { innerNav.navigate("track/$it") })

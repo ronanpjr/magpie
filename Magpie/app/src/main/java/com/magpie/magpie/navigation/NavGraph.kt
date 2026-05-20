@@ -1,5 +1,6 @@
 package com.magpie.magpie.navigation
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -9,7 +10,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavType
@@ -25,17 +25,25 @@ import com.magpie.magpie.data.network.RetrofitClient
 import com.magpie.magpie.data.profile.UserProfileRepository
 import com.magpie.magpie.data.review.ReviewRepository
 import com.magpie.magpie.data.review.api.ReviewApiService
+import com.magpie.magpie.data.catalog.CatalogRepository
+import com.magpie.magpie.data.catalog.api.CatalogApiService
 import com.magpie.magpie.ui.main.MainShell
 import com.magpie.magpie.ui.screens.auth.LoginScreen
 import com.magpie.magpie.ui.screens.auth.RegisterScreen
 import com.magpie.magpie.ui.screens.profile.ProfileEditScreen
-import com.magpie.magpie.ui.screens.profile.UserListScreen
 import com.magpie.magpie.ui.screens.profile.UserProfileScreen
 import com.magpie.magpie.ui.screens.profile.UserProfileViewModel
 import com.magpie.magpie.ui.screens.profile.UserProfileViewType
+import com.magpie.magpie.ui.screens.profile.UserListScreen
 import com.magpie.magpie.ui.screens.search.SearchScreen
-import com.magpie.magpie.data.catalog.CatalogRepository
-import com.magpie.magpie.data.catalog.api.CatalogApiService
+import com.magpie.magpie.ui.screens.feed.FeedViewModel
+import com.magpie.magpie.ui.screens.feed.HomeScreen
+import com.magpie.magpie.ui.screens.createreview.CreateReviewScreen
+import com.magpie.magpie.ui.screens.createreview.CreateReviewViewModel
+import com.magpie.magpie.ui.screens.reviewcomments.ReviewCommentsScreen
+import com.magpie.magpie.ui.screens.reviewcomments.ReviewCommentsViewModel
+import com.magpie.magpie.ui.screens.reviewdetail.ReviewDetailScreen
+import com.magpie.magpie.ui.screens.reviewdetail.ReviewDetailViewModel
 import com.magpie.magpie.ui.screens.catalog.ArtistScreen
 import com.magpie.magpie.ui.screens.catalog.ArtistViewModel
 import com.magpie.magpie.ui.screens.catalog.AlbumScreen
@@ -47,32 +55,41 @@ fun MagpieNavGraph() {
     val navController = rememberNavController()
     val context = LocalContext.current
     val tokenManager = remember(context) { TokenManager(context.applicationContext) }
+
     val authRepository = remember(context) {
         RetrofitClient.initialize(context.applicationContext, tokenManager)
         val authApiService = RetrofitClient.createService(AuthApiService::class.java)
         RemoteAuthRepository(authApiService, tokenManager)
     }
+
     val authApiService = remember(context) {
         RetrofitClient.createService(AuthApiService::class.java)
     }
+
     val reviewApiService = remember(context) {
         RetrofitClient.createService(ReviewApiService::class.java)
     }
+
     val reviewRepository = remember(context) {
         ReviewRepository(reviewApiService, tokenManager)
     }
+
     val userProfileRepository = remember(context) {
         UserProfileRepository(authApiService, tokenManager, reviewRepository)
     }
+
     val catalogApiService = remember(context) {
         RetrofitClient.createService(CatalogApiService::class.java)
     }
+
     val catalogRepository = remember(context) {
         CatalogRepository(catalogApiService)
     }
+
     val startDestination = Screen.Login.route
     val scope = rememberCoroutineScope()
     var authErrorCode by remember { mutableStateOf<String?>(null) }
+
     Scaffold { innerPadding: PaddingValues ->
         NavHost(
             navController = navController,
@@ -122,6 +139,12 @@ fun MagpieNavGraph() {
                 )
             }
 
+            composable(Screen.Feed.route) {
+                navController.navigate(Screen.Main.route) {
+                    popUpTo(Screen.Feed.route) { inclusive = true }
+                }
+            }
+
             composable(
                 route = Screen.UserProfile.route,
                 arguments = listOf(navArgument("userId") { type = NavType.IntType })
@@ -137,10 +160,92 @@ fun MagpieNavGraph() {
                 UserProfileScreen(
                     paddingValues = innerPadding,
                     viewModel = viewModel,
-                    onFollowersClick = { },
-                    onFollowingClick = { },
-                    onEditProfile = { },
-                    onLogout = {}
+                    onFollowersClick = { navController.navigate(Screen.ProfileFollowers.createRoute(userId)) },
+                    onFollowingClick = { navController.navigate(Screen.ProfileFollowing.createRoute(userId)) },
+                    onEditProfile = {},
+                    onLogout = {},
+                    onReviewClick = { reviewId ->
+                        navController.navigate(Screen.ReviewDetail.createRoute(reviewId))
+                    }
+                )
+            }
+
+            composable(
+                route = Screen.ProfileFollowers.route,
+                arguments = listOf(navArgument("userId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                val state = remember { mutableStateOf(emptyList<com.magpie.magpie.data.auth.models.UserRead>()) }
+                LaunchedEffect(userId) {
+                    state.value = userProfileRepository.getFollowers(userId).items
+                }
+                UserListScreen(paddingValues = innerPadding, title = "Followers", users = state.value)
+            }
+
+            composable(
+                route = Screen.ProfileFollowing.route,
+                arguments = listOf(navArgument("userId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                val state = remember { mutableStateOf(emptyList<com.magpie.magpie.data.auth.models.UserRead>()) }
+                LaunchedEffect(userId) {
+                    state.value = userProfileRepository.getFollowing(userId).items
+                }
+                UserListScreen(paddingValues = innerPadding, title = "Following", users = state.value)
+            }
+
+            composable(
+                route = Screen.ReviewComments.route,
+                arguments = listOf(navArgument("reviewId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val reviewId = backStackEntry.arguments?.getInt("reviewId") ?: 0
+                val vm = remember(reviewId) {
+                    ReviewCommentsViewModel(reviewRepository, reviewId)
+                }
+                ReviewCommentsScreen(
+                    paddingValues = innerPadding,
+                    viewModel = vm,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.CreateReviewFromTemplate.route,
+                arguments = listOf(navArgument("templateReviewId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val templateId = backStackEntry.arguments?.getInt("templateReviewId") ?: 0
+                val vm = remember(templateId) {
+                    CreateReviewViewModel(reviewRepository, templateId)
+                }
+                CreateReviewScreen(
+                    paddingValues = innerPadding,
+                    viewModel = vm,
+                    onBack = { navController.popBackStack() },
+                    onPublished = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.ReviewDetail.route,
+                arguments = listOf(navArgument("reviewId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val reviewId = backStackEntry.arguments?.getInt("reviewId") ?: 0
+                val detailViewModel = remember(reviewId) {
+                    ReviewDetailViewModel(reviewRepository, reviewId)
+                }
+                ReviewDetailScreen(
+                    paddingValues = innerPadding,
+                    viewModel = detailViewModel,
+                    onBack = { navController.popBackStack() },
+                    onAuthorClick = { userId ->
+                        navController.navigate(Screen.UserProfile.createRoute(userId))
+                    },
+                    onCommentsClick = {
+                        navController.navigate(Screen.ReviewComments.createRoute(reviewId))
+                    },
+                    onEvaluateClick = {
+                        navController.navigate(Screen.CreateReviewFromTemplate.createRoute(reviewId))
+                    }
                 )
             }
 
@@ -157,6 +262,16 @@ fun MagpieNavGraph() {
                         navController.navigate(Screen.Login.route) {
                             popUpTo(navController.graph.id) { inclusive = true }
                         }
+                    },
+                    homeScreen = {
+                        val feedViewModel = remember { FeedViewModel(reviewRepository) }
+                        HomeScreen(
+                            paddingValues = innerPadding,
+                            viewModel = feedViewModel,
+                            onReviewClick = { reviewId ->
+                                navController.navigate(Screen.ReviewDetail.createRoute(reviewId))
+                            }
+                        )
                     },
                     profileScreen = { onEditProfile, onFollowersClick, onFollowingClick ->
                         val viewModel = remember {
@@ -183,6 +298,9 @@ fun MagpieNavGraph() {
                                 navController.navigate(Screen.Login.route) {
                                     popUpTo(navController.graph.id) { inclusive = true }
                                 }
+                            },
+                            onReviewClick = { reviewId ->
+                                navController.navigate(Screen.ReviewDetail.createRoute(reviewId))
                             }
                         )
                     },

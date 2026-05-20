@@ -29,9 +29,8 @@ object ReviewModule {
     @Singleton
     @Provides
     fun provideReviewRepository(
-        reviewApiService: ReviewApiService,
-        tokenManager: TokenManager
+        reviewApiService: ReviewApiService
     ): ReviewRepository {
-        return ReviewRepository(reviewApiService, tokenManager)
+        return ReviewRepository(reviewApiService)
     }
 }
