@@ -34,6 +34,12 @@ import com.magpie.magpie.ui.screens.profile.UserProfileViewModel
 import com.magpie.magpie.ui.screens.profile.UserProfileViewType
 import com.magpie.magpie.ui.screens.profile.UserListScreen
 import com.magpie.magpie.ui.screens.search.SearchScreen
+import com.magpie.magpie.data.catalog.CatalogRepository
+import com.magpie.magpie.data.catalog.api.CatalogApiService
+import com.magpie.magpie.ui.screens.catalog.ArtistScreen
+import com.magpie.magpie.ui.screens.catalog.ArtistViewModel
+import com.magpie.magpie.ui.screens.catalog.AlbumScreen
+import com.magpie.magpie.ui.screens.catalog.AlbumViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -57,6 +63,12 @@ fun MagpieNavGraph() {
     }
     val userProfileRepository = remember(context) {
         UserProfileRepository(authApiService, tokenManager, reviewRepository)
+    }
+    val catalogApiService = remember(context) {
+        RetrofitClient.createService(CatalogApiService::class.java)
+    }
+    val catalogRepository = remember(context) {
+        CatalogRepository(catalogApiService)
     }
     val startDestination = Screen.Login.route
     val scope = rememberCoroutineScope()
@@ -197,7 +209,10 @@ fun MagpieNavGraph() {
                         SearchScreen(
                             paddingValues = innerPadding,
                             onUserClick = { userId -> navController.navigate(Screen.UserProfile.createRoute(userId)) },
-                            searchUsers = { query -> userProfileRepository.searchUsers(query).items }
+                            onArtistClick = { artistId -> navController.navigate(Screen.ArtistDetail.createRoute(artistId)) },
+                            onAlbumClick = { albumId -> navController.navigate(Screen.AlbumDetail.createRoute(albumId)) },
+                            searchUsers = { query -> userProfileRepository.searchUsers(query).items },
+                            searchCatalog = { query, type -> catalogRepository.search(query, type) }
                         )
                     },
                     profileScreen = {
@@ -222,6 +237,41 @@ fun MagpieNavGraph() {
                             }
                         )
                     }
+                )
+            }
+
+            composable(
+                route = Screen.ArtistDetail.route,
+                arguments = listOf(navArgument("artistId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val artistId = backStackEntry.arguments?.getInt("artistId") ?: 0
+                val viewModel = remember(artistId) {
+                    ArtistViewModel(catalogRepository = catalogRepository, artistId = artistId)
+                }
+                ArtistScreen(
+                    paddingValues = innerPadding,
+                    viewModel = viewModel,
+                    onAlbumClick = { albumId -> navController.navigate(Screen.AlbumDetail.createRoute(albumId)) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.AlbumDetail.route,
+                arguments = listOf(navArgument("albumId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val albumId = backStackEntry.arguments?.getInt("albumId") ?: 0
+                val viewModel = remember(albumId) {
+                    AlbumViewModel(catalogRepository = catalogRepository, reviewRepository = reviewRepository, albumId = albumId)
+                }
+                AlbumScreen(
+                    paddingValues = innerPadding,
+                    viewModel = viewModel,
+                    onArtistClick = { artistId -> navController.navigate(Screen.ArtistDetail.createRoute(artistId)) },
+                    onWriteReviewClick = { albumId ->
+                        android.widget.Toast.makeText(context, "Avaliar álbum $albumId (em breve)", android.widget.Toast.LENGTH_SHORT).show()
+                    },
+                    onBackClick = { navController.popBackStack() }
                 )
             }
         }
