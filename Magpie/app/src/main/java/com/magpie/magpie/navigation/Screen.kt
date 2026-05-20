@@ -25,6 +25,10 @@ sealed class Screen(val route: String) {
         fun createRoute(albumId: Int): String = "catalog/album/$albumId"
     }
 
+    data object TrackDetail : Screen("catalog/track/{trackId}") {
+        fun createRoute(trackId: Int): String = "catalog/track/$trackId"
+    }
+
     /** Shell principal com bottom bar; `username` vem do login. */
     data object Main : Screen("main")
 }

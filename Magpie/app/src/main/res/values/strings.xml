@@ -61,6 +61,7 @@
     <string name="catalog_discography_label">Discografia</string>
     <string name="catalog_discography_empty">Nenhum álbum encontrado.</string>
     <string name="catalog_album_label">Álbum</string>
+    <string name="catalog_track_label">Música</string>
     <string name="catalog_album_desc_fallback">Álbum %1$s de %2$s lançado em %3$s.</string>
     <string name="catalog_general_rating_label">Nota</string>
     <string name="catalog_action_rate">Avaliar</string>

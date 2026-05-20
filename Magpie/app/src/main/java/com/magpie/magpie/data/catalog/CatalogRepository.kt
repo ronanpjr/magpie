@@ -28,4 +28,8 @@ class CatalogRepository(
     suspend fun search(query: String, type: String = "all", limit: Int = 10): CatalogSearchResponseDto {
         return catalogApiService.search(query, type, limit)
     }
+
+    suspend fun getTrack(id: Int): TrackReadDto {
+        return catalogApiService.getTrack(id)
+    }
 }

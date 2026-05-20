@@ -225,7 +225,7 @@ fun MagpieNavGraph() {
                             onBackClick = onBackClick
                         )
                     },
-                    albumScreen = { padding, albumId, onBackClick, onArtistClick ->
+                    albumScreen = { padding, albumId, onBackClick, onArtistClick, onTrackClick ->
                         val viewModel = remember(albumId) {
                             AlbumViewModel(catalogRepository = catalogRepository, reviewRepository = reviewRepository, albumId = albumId)
                         }
@@ -234,15 +234,30 @@ fun MagpieNavGraph() {
                             viewModel = viewModel,
                             onArtistClick = onArtistClick,
                             onWriteReviewClick = { id -> android.widget.Toast.makeText(context, "Avaliar álbum $id (em breve)", android.widget.Toast.LENGTH_SHORT).show() },
+                            onBackClick = onBackClick,
+                            onTrackClick = onTrackClick
+                        )
+                    },
+                    trackScreen = { padding, trackId, onBackClick, onArtistClick, onAlbumClick ->
+                        val viewModel = remember(trackId) {
+                            com.magpie.magpie.ui.screens.catalog.TrackViewModel(catalogRepository = catalogRepository, reviewRepository = reviewRepository, trackId = trackId)
+                        }
+                        com.magpie.magpie.ui.screens.catalog.TrackScreen(
+                            paddingValues = padding,
+                            viewModel = viewModel,
+                            onArtistClick = onArtistClick,
+                            onAlbumClick = onAlbumClick,
+                            onWriteReviewClick = { id -> android.widget.Toast.makeText(context, "Avaliar música $id (em breve)", android.widget.Toast.LENGTH_SHORT).show() },
                             onBackClick = onBackClick
                         )
                     },
-                    searchScreen = { onArtistClick, onAlbumClick ->
+                    searchScreen = { onArtistClick, onAlbumClick, onTrackClick ->
                         SearchScreen(
                             paddingValues = innerPadding,
                             onUserClick = { userId -> navController.navigate(Screen.UserProfile.createRoute(userId)) },
                             onArtistClick = { artistId -> onArtistClick(artistId) },
                             onAlbumClick = { albumId -> onAlbumClick(albumId) },
+                            onTrackClick = { trackId -> onTrackClick(trackId) },
                             searchUsers = { query -> userProfileRepository.searchUsers(query).items },
                             searchCatalog = { query, type -> catalogRepository.search(query, type) }
                         )
