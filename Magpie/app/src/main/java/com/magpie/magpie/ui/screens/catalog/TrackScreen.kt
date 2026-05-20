@@ -16,12 +16,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,10 +31,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -47,6 +42,8 @@ import coil.compose.AsyncImage
 import com.magpie.magpie.R
 import com.magpie.magpie.data.catalog.models.TrackReadDto
 import com.magpie.magpie.data.review.models.ReviewReadDto
+import com.magpie.magpie.ui.components.ReviewItem
+import com.magpie.magpie.ui.components.StarRatingRow
 
 @Composable
 fun TrackScreen(
@@ -54,7 +51,9 @@ fun TrackScreen(
     viewModel: TrackViewModel,
     onArtistClick: (Int) -> Unit,
     onAlbumClick: (Int) -> Unit,
-    onWriteReviewClick: (Int) -> Unit,
+    onWriteReviewClick: () -> Unit,
+    onReviewClick: (Int) -> Unit,
+    onAuthorClick: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
     val uiState = viewModel.uiState.collectAsState()
@@ -79,6 +78,8 @@ fun TrackScreen(
                     onArtistClick = onArtistClick,
                     onAlbumClick = onAlbumClick,
                     onWriteReviewClick = onWriteReviewClick,
+                    onReviewClick = onReviewClick,
+                    onAuthorClick = onAuthorClick,
                     onBackClick = onBackClick
                 )
             }
@@ -118,7 +119,9 @@ private fun TrackContent(
     reviews: List<ReviewReadDto>,
     onArtistClick: (Int) -> Unit,
     onAlbumClick: (Int) -> Unit,
-    onWriteReviewClick: (Int) -> Unit,
+    onWriteReviewClick: () -> Unit,
+    onReviewClick: (Int) -> Unit,
+    onAuthorClick: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -251,7 +254,7 @@ private fun TrackContent(
                             )
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        StarRatingRow(rating = track.avgRating)
+                        StarRatingRow(rating = track.avgRating, starSize = 32.dp)
                     }
                 }
             }
@@ -260,7 +263,7 @@ private fun TrackContent(
                 Spacer(modifier = Modifier.height(8.dp))
                 // Capsule Teal "Avaliar" Button
                 Button(
-                    onClick = { onWriteReviewClick(track.id) },
+                    onClick = { onWriteReviewClick() },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
@@ -289,31 +292,38 @@ private fun TrackContent(
                     }
                 }
             }
-        }
-    }
-}
 
-@Composable
-private fun StarRatingRow(rating: Double) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        val filledStars = rating.toInt()
-        val hasHalf = (rating - filledStars) >= 0.25
-
-        for (i in 1..5) {
-            val starIcon = when {
-                i <= filledStars -> Icons.Default.Star
-                i == filledStars + 1 && hasHalf -> Icons.Default.StarHalf
-                else -> Icons.Default.StarBorder
+            item {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = stringResource(R.string.catalog_reviews_label),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Start
+                )
             }
-            Icon(
-                imageVector = starIcon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.size(32.dp)
-            )
+
+            if (reviews.isEmpty()) {
+                item {
+                    Text(
+                        text = stringResource(R.string.catalog_reviews_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                }
+            } else {
+                items(reviews) { review ->
+                    ReviewItem(
+                        review = review,
+                        onClick = { onReviewClick(review.id) },
+                        onAuthorClick = onAuthorClick
+                    )
+                }
+            }
         }
     }
 }

@@ -6,11 +6,13 @@ import com.magpie.magpie.data.review.models.ReviewCommentDto
 import com.magpie.magpie.data.review.models.ReviewCommentVoteRequestDto
 import com.magpie.magpie.data.review.models.ReviewCreateDto
 import com.magpie.magpie.data.review.models.ReviewReadDto
+import com.magpie.magpie.data.review.models.ReviewUpdateDto
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -86,6 +88,17 @@ interface ReviewApiService {
 
     @DELETE("reviews/{reviewId}/like")
     suspend fun unlikeReview(
+        @Path("reviewId") reviewId: Int
+    ): Map<String, String>
+
+    @PUT("reviews/{reviewId}")
+    suspend fun updateReview(
+        @Path("reviewId") reviewId: Int,
+        @Body payload: ReviewUpdateDto
+    ): ReviewReadDto
+
+    @DELETE("reviews/{reviewId}")
+    suspend fun deleteReview(
         @Path("reviewId") reviewId: Int
     ): Map<String, String>
 }

@@ -1,23 +1,9 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
-}
-
-private fun debugApiBaseUrl(): String {
-    val props = Properties()
-    val f = rootProject.file("local.properties")
-    if (f.exists()) {
-        f.reader(Charsets.UTF_8).use { props.load(it) }
-    }
-    val fromFile = props.getProperty("magpie.api.base.url")?.trim()?.takeIf { it.isNotEmpty() }
-    val raw = fromFile ?: "http://10.0.2.2:8000"
-    val withSlash = if (raw.endsWith("/")) raw else "$raw/"
-    return withSlash
 }
 
 android {
@@ -33,7 +19,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8000/\"")
+        buildConfigField("String", "BASE_URL", "\"https://magpieapp.duckdns.org/\"")
     }
 
     buildTypes {
@@ -46,7 +32,7 @@ android {
             buildConfigField("String", "BASE_URL", "\"https://magpieapp.duckdns.org/\"")
         }
         debug {
-            buildConfigField("String", "BASE_URL", "\"${debugApiBaseUrl()}\"")
+            buildConfigField("String", "BASE_URL", "\"https://magpieapp.duckdns.org/\"")
         }
     }
     compileOptions {

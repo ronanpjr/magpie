@@ -41,6 +41,8 @@ data class ReviewReadDto(
     val likeCount: Int = 0,
     @Json(name = "liked_by_me")
     val likedByMe: Boolean = false,
+    @Json(name = "is_owner")
+    val isOwner: Boolean = false,
     @Json(name = "created_at")
     val createdAt: String,
     @Json(name = "updated_at")
@@ -83,4 +85,11 @@ data class ReviewCommentCreateDto(
 data class ReviewCommentVoteRequestDto(
     @Json(name = "direction")
     val direction: String
+)
+
+data class ReviewUpdateDto(
+    @Json(name = "rating")
+    val rating: Double? = null,
+    @Json(name = "body")
+    val body: String? = null
 )

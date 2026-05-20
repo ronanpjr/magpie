@@ -15,20 +15,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material.icons.filled.StarHalf
-import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -42,26 +35,21 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.magpie.magpie.R
 import com.magpie.magpie.data.catalog.models.AlbumReadDto
 import com.magpie.magpie.data.catalog.models.TrackReadDto
 import com.magpie.magpie.data.review.models.ReviewReadDto
+import com.magpie.magpie.ui.components.ReviewItem
+import com.magpie.magpie.ui.components.StarRatingRow
 
 @Composable
 fun AlbumScreen(
@@ -69,7 +57,9 @@ fun AlbumScreen(
     viewModel: AlbumViewModel,
     onArtistClick: (Int) -> Unit,
     onTrackClick: (Int) -> Unit,
-    onWriteReviewClick: (Int) -> Unit,
+    onWriteReviewClick: () -> Unit,
+    onReviewClick: (Int) -> Unit,
+    onAuthorClick: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
     val uiState = viewModel.uiState.collectAsState()
@@ -95,6 +85,8 @@ fun AlbumScreen(
                     onArtistClick = onArtistClick,
                     onTrackClick = onTrackClick,
                     onWriteReviewClick = onWriteReviewClick,
+                    onReviewClick = onReviewClick,
+                    onAuthorClick = onAuthorClick,
                     onBackClick = onBackClick
                 )
             }
@@ -135,11 +127,11 @@ private fun AlbumContent(
     reviews: List<ReviewReadDto>,
     onArtistClick: (Int) -> Unit,
     onTrackClick: (Int) -> Unit,
-    onWriteReviewClick: (Int) -> Unit,
+    onWriteReviewClick: () -> Unit,
+    onReviewClick: (Int) -> Unit,
+    onAuthorClick: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
-    var isSubscribed by remember { mutableStateOf(false) }
-
     Column(modifier = Modifier.fillMaxSize()) {
         // Custom header
         Row(
@@ -175,7 +167,7 @@ private fun AlbumContent(
         ) {
             item {
                 Spacer(modifier = Modifier.height(6.dp))
-                // Cover Art and Floating Bell
+                // Cover Art
                 Box(
                     modifier = Modifier.size(200.dp),
                     contentAlignment = Alignment.Center
@@ -247,7 +239,6 @@ private fun AlbumContent(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-
                     // Nota Geral
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
@@ -258,8 +249,7 @@ private fun AlbumContent(
                             )
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        // Mock slightly offset rating for general to make them dynamic or use same
-                        StarRatingRow(rating = album.avgRating)
+                        StarRatingRow(rating = album.avgRating, starSize = 32.dp)
                     }
                 }
             }
@@ -268,7 +258,7 @@ private fun AlbumContent(
                 Spacer(modifier = Modifier.height(8.dp))
                 // Capsule Teal "Avaliar" Button
                 Button(
-                    onClick = { onWriteReviewClick(album.id) },
+                    onClick = { onWriteReviewClick() },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
@@ -325,31 +315,38 @@ private fun AlbumContent(
                     TrackCard(track = track, albumImageUrl = album.imageUrl, onTrackClick = onTrackClick)
                 }
             }
-        }
-    }
-}
 
-@Composable
-private fun StarRatingRow(rating: Double) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        val filledStars = rating.toInt()
-        val hasHalf = (rating - filledStars) >= 0.25
-
-        for (i in 1..5) {
-            val starIcon = when {
-                i <= filledStars -> Icons.Default.Star
-                i == filledStars + 1 && hasHalf -> Icons.Default.StarHalf
-                else -> Icons.Default.StarBorder
+            item {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = stringResource(R.string.catalog_reviews_label),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Start
+                )
             }
-            Icon(
-                imageVector = starIcon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.size(32.dp)
-            )
+
+            if (reviews.isEmpty()) {
+                item {
+                    Text(
+                        text = stringResource(R.string.catalog_reviews_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                }
+            } else {
+                items(reviews) { review ->
+                    ReviewItem(
+                        review = review,
+                        onClick = { onReviewClick(review.id) },
+                        onAuthorClick = onAuthorClick
+                    )
+                }
+            }
         }
     }
 }

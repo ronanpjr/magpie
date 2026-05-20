@@ -52,6 +52,7 @@ def _review_read(db: Session, review: Review, viewer_id: int | None = None) -> R
         body=review.body,
         like_count=int(like_count or 0),
         liked_by_me=liked_by_me,
+        is_owner=viewer_id is not None and review.author_id == viewer_id,
         created_at=review.created_at,
         updated_at=review.updated_at,
     )

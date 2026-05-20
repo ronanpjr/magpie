@@ -45,5 +45,6 @@ class ReviewRead(SQLModel):
     body: str | None = None
     like_count: int = 0
     liked_by_me: bool = False
+    is_owner: bool = False
     created_at: datetime
     updated_at: datetime

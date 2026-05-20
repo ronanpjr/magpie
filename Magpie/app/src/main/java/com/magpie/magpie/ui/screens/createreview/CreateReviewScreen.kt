@@ -107,7 +107,7 @@ fun CreateReviewScreen(
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    OutlinedButton(onClick = { viewModel.loadTemplate() }) {
+                    OutlinedButton(onClick = { viewModel.retry() }) {
                         Text(stringResource(R.string.feed_retry))
                     }
                 }

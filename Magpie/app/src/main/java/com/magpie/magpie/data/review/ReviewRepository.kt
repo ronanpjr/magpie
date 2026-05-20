@@ -1,5 +1,6 @@
 package com.magpie.magpie.data.review
 
+import com.magpie.magpie.data.auth.token.TokenManager
 import com.magpie.magpie.data.review.api.ReviewApiService
 import com.magpie.magpie.data.review.models.PageDto
 import com.magpie.magpie.data.review.models.ReviewCommentCreateDto
@@ -7,17 +8,21 @@ import com.magpie.magpie.data.review.models.ReviewCommentDto
 import com.magpie.magpie.data.review.models.ReviewCommentVoteRequestDto
 import com.magpie.magpie.data.review.models.ReviewCreateDto
 import com.magpie.magpie.data.review.models.ReviewReadDto
+import com.magpie.magpie.data.review.models.ReviewUpdateDto
 import javax.inject.Inject
 
 class ReviewRepository @Inject constructor(
-    private val reviewApiService: ReviewApiService
+    private val reviewApiService: ReviewApiService,
+    private val tokenManager: TokenManager? = null
 ) {
     suspend fun getUserReviews(
         userId: Int,
         page: Int = 1,
         limit: Int = 20
     ): List<ReviewReadDto> {
-        return reviewApiService.getUserReviews(userId, page, limit).items
+        val token = tokenManager?.getAccessToken() ?: throw IllegalStateException("No access token available")
+        val bearerToken = "Bearer $token"
+        return reviewApiService.getUserReviews(userId, page, limit, bearerToken).items
     }
 
     suspend fun getFeed(page: Int = 1, limit: Int = 20): PageDto<ReviewReadDto> {
@@ -60,6 +65,14 @@ class ReviewRepository @Inject constructor(
         reviewApiService.likeReview(reviewId)
     }
 
+    suspend fun updateReview(reviewId: Int, payload: ReviewUpdateDto): ReviewReadDto {
+        return reviewApiService.updateReview(reviewId, payload)
+    }
+
+    suspend fun deleteReview(reviewId: Int) {
+        reviewApiService.deleteReview(reviewId)
+    }
+
     suspend fun unlikeReview(reviewId: Int) {
         reviewApiService.unlikeReview(reviewId)
     }
@@ -72,7 +85,7 @@ class ReviewRepository @Inject constructor(
         limit: Int = 20,
         orderBy: String = "recent"
     ): List<ReviewReadDto> {
-        val token = tokenManager.getAccessToken() ?: throw IllegalStateException("No access token available")
+        val token = tokenManager?.getAccessToken() ?: throw IllegalStateException("No access token available")
         val bearerToken = "Bearer $token"
         val pageDto = reviewApiService.getReviews(
             targetType = targetType,
@@ -84,5 +97,19 @@ class ReviewRepository @Inject constructor(
             token = bearerToken
         )
         return pageDto.items
+    }
+
+    suspend fun createPlaceholderReview(
+        targetType: String,  // "album" or "track"
+        targetId: Int
+    ): ReviewReadDto {
+        return reviewApiService.createReview(
+            ReviewCreateDto(
+                targetType = targetType,
+                targetId = targetId,
+                rating = 3.0,
+                body = null
+            )
+        )
     }
 }

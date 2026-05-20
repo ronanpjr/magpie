@@ -1,4 +1,4 @@
-package com.magpie.magpie.ui.screens.search
+package com.magpie.magpie.ui.screens.rate
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -10,16 +10,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,119 +45,73 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.res.stringResource
-import com.magpie.magpie.R
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.magpie.magpie.data.auth.models.UserRead
-import com.magpie.magpie.data.catalog.models.ArtistReadDto
+import com.magpie.magpie.data.catalog.CatalogRepository
 import com.magpie.magpie.data.catalog.models.AlbumReadDto
-import com.magpie.magpie.data.catalog.models.CatalogSearchResponseDto
+import com.magpie.magpie.data.catalog.models.TrackReadDto
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-enum class SearchFilter { All, Users, Artists, Albums }
+enum class RateSearchFilter { Albums, Tracks }
 
-data class SearchUiState(
+data class RateSearchUiState(
     val query: String = "",
-    val selectedFilter: SearchFilter = SearchFilter.All,
-    val users: List<UserRead> = emptyList(),
-    val artists: List<ArtistReadDto> = emptyList(),
+    val filterType: RateSearchFilter = RateSearchFilter.Albums,
     val albums: List<AlbumReadDto> = emptyList(),
+    val tracks: List<TrackReadDto> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen(
-    paddingValues: PaddingValues,
-    onUserClick: (Int) -> Unit,
-    onArtistClick: (Int) -> Unit,
-    onAlbumClick: (Int) -> Unit,
-    onTrackClick: (Int) -> Unit,
-    searchUsers: suspend (String) -> List<UserRead>,
-    searchCatalog: suspend (String, String) -> CatalogSearchResponseDto
+fun RateSearchScreen(
+    catalogRepository: CatalogRepository,
+    onNavigateToCreateReview: (targetType: String, targetId: Int) -> Unit,
+    paddingValues: PaddingValues = PaddingValues(0.dp)
 ) {
     var query by remember { mutableStateOf("") }
-    var filter by remember { mutableStateOf(SearchFilter.All) }
-    var state by remember { mutableStateOf(SearchUiState()) }
+    var filter by remember { mutableStateOf(RateSearchFilter.Albums) }
+    var state by remember { mutableStateOf(RateSearchUiState()) }
     val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) }
-    val searchFailedMessage = stringResource(R.string.error_search_failed)
+    var searchJob by remember { mutableStateOf<Job?>(null) }
 
     LaunchedEffect(query, filter) {
-        job?.cancel()
+        searchJob?.cancel()
         if (query.isBlank() || query.trim().length < 2) {
             state = state.copy(
                 query = query,
-                selectedFilter = filter,
-                users = emptyList(),
-                artists = emptyList(),
+                filterType = filter,
                 albums = emptyList(),
+                tracks = emptyList(),
                 isLoading = false,
                 error = null
             )
             return@LaunchedEffect
         }
-        job = scope.launch {
+        searchJob = scope.launch {
             delay(300)
-            state = state.copy(query = query, selectedFilter = filter, isLoading = true, error = null)
+            state = state.copy(query = query, filterType = filter, isLoading = true, error = null)
             state = try {
                 val cleanQuery = query.trim()
-                when (filter) {
-                    SearchFilter.All -> {
-                        val usersDeferred = async {
-                            try { searchUsers(cleanQuery) } catch (e: Exception) { emptyList() }
-                        }
-                        val catalogDeferred = async {
-                            try { searchCatalog(cleanQuery, "all") } catch (e: Exception) { CatalogSearchResponseDto() }
-                        }
-                        val usersResult = usersDeferred.await()
-                        val catalogResult = catalogDeferred.await()
-                        state.copy(
-                            users = usersResult,
-                            artists = catalogResult.artists,
-                            albums = catalogResult.albums,
-                            isLoading = false
-                        )
-                    }
-                    SearchFilter.Users -> {
-                        state.copy(
-                            users = searchUsers(cleanQuery),
-                            artists = emptyList(),
-                            albums = emptyList(),
-                            isLoading = false
-                        )
-                    }
-                    SearchFilter.Artists -> {
-                        val catalogResult = searchCatalog(cleanQuery, "artist")
-                        state.copy(
-                            users = emptyList(),
-                            artists = catalogResult.artists,
-                            albums = emptyList(),
-                            isLoading = false
-                        )
-                    }
-                    SearchFilter.Albums -> {
-                        val catalogResult = searchCatalog(cleanQuery, "album")
-                        state.copy(
-                            users = emptyList(),
-                            artists = emptyList(),
-                            albums = catalogResult.albums,
-                            isLoading = false
-                        )
-                    }
+                val searchType = when (filter) {
+                    RateSearchFilter.Albums -> "album"
+                    RateSearchFilter.Tracks -> "track"
                 }
+                val result = catalogRepository.search(cleanQuery, searchType, 20)
+                state.copy(
+                    albums = result.albums,
+                    tracks = result.tracks,
+                    isLoading = false
+                )
             } catch (e: Exception) {
                 state.copy(
-                    users = emptyList(),
-                    artists = emptyList(),
                     albums = emptyList(),
+                    tracks = emptyList(),
                     isLoading = false,
-                    error = e.message ?: searchFailedMessage
+                    error = e.message ?: "Search failed"
                 )
             }
         }
@@ -177,26 +130,18 @@ fun SearchScreen(
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
-            label = { Text(stringResource(R.string.search_label)) }
+            label = { Text("O que você quer avaliar?") }
         )
 
         androidx.compose.foundation.lazy.LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            items(SearchFilter.entries) { item ->
+            items(RateSearchFilter.entries) { item ->
                 FilterChip(
                     selected = filter == item,
                     onClick = { filter = item },
-                    label = {
-                        val label = when(item) {
-                            SearchFilter.All -> stringResource(R.string.filter_all)
-                            SearchFilter.Users -> stringResource(R.string.filter_users)
-                            SearchFilter.Artists -> stringResource(R.string.filter_artists)
-                            SearchFilter.Albums -> stringResource(R.string.filter_albums)
-                        }
-                        Text(label)
-                    },
+                    label = { Text(item.name) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primary,
                         selectedLabelColor = MaterialTheme.colorScheme.onPrimary
@@ -220,45 +165,37 @@ fun SearchScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize()
         ) {
-            // Render Artists
-            if (state.artists.isNotEmpty()) {
-                item {
-                    Text(
-                        text = stringResource(R.string.category_artists),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
-                }
-                items(state.artists) { artist ->
-                    SearchArtistCard(artist = artist, onClick = { onArtistClick(artist.id) })
-                }
-            }
-
             // Render Albums
             if (state.albums.isNotEmpty()) {
                 item {
                     Text(
-                        text = stringResource(R.string.category_albums),
+                        text = "Álbuns",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
                 }
                 items(state.albums) { album ->
-                    SearchAlbumCard(album = album, onClick = { onAlbumClick(album.id) })
+                    RateAlbumCard(
+                        album = album,
+                        onClick = { onNavigateToCreateReview("album", album.id) }
+                    )
                 }
             }
 
-            // Render Users
-            if (state.users.isNotEmpty()) {
+            // Render Tracks
+            if (state.tracks.isNotEmpty()) {
                 item {
                     Text(
-                        text = stringResource(R.string.category_users),
+                        text = "Músicas",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
                 }
-                items(state.users) { user ->
-                    SearchUserCard(user = user, onClick = { onUserClick(user.id) })
+                items(state.tracks) { track ->
+                    RateTrackCard(
+                        track = track,
+                        onClick = { onNavigateToCreateReview("track", track.id) }
+                    )
                 }
             }
         }
@@ -266,84 +203,16 @@ fun SearchScreen(
 }
 
 @Composable
-private fun SearchArtistCard(artist: ArtistReadDto, onClick: () -> Unit) {
+private fun RateAlbumCard(
+    album: AlbumReadDto,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = CircleShape,
-                modifier = Modifier.size(52.dp),
-                color = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                if (artist.imageUrl.isNullOrBlank()) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(text = artist.name.take(1).uppercase())
-                    }
-                } else {
-                    AsyncImage(
-                        model = artist.imageUrl,
-                        contentDescription = artist.name,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = artist.name,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (artist.genres.isNotEmpty()) {
-                    Text(
-                        text = artist.genres.joinToString(", "),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-            IconButton(
-                onClick = onClick,
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ),
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SearchAlbumCard(album: AlbumReadDto, onClick: () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
@@ -406,12 +275,16 @@ private fun SearchAlbumCard(album: AlbumReadDto, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SearchUserCard(user: UserRead, onClick: () -> Unit) {
+private fun RateTrackCard(
+    track: TrackReadDto,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
@@ -422,18 +295,18 @@ private fun SearchUserCard(user: UserRead, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                shape = CircleShape,
+                shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.size(52.dp),
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
-                if (user.avatarUrl.isNullOrBlank()) {
+                if (track.albumImageUrl.isNullOrBlank()) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(imageVector = Icons.Default.Person, contentDescription = null)
+                        Text(text = track.title.take(1))
                     }
                 } else {
                     AsyncImage(
-                        model = user.avatarUrl,
-                        contentDescription = user.displayName,
+                        model = track.albumImageUrl,
+                        contentDescription = track.title,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -442,7 +315,7 @@ private fun SearchUserCard(user: UserRead, onClick: () -> Unit) {
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = user.displayName,
+                    text = track.title,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -451,9 +324,11 @@ private fun SearchUserCard(user: UserRead, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = stringResource(R.string.profile_username_format, user.username),
+                    text = "${track.artistName} · ${track.albumTitle}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
             IconButton(

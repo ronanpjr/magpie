@@ -1,5 +1,8 @@
 package com.magpie.magpie.ui.main
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -29,15 +32,19 @@ import com.magpie.magpie.navigation.MainTab
 fun MainShell(
     username: String,
     onLogout: () -> Unit,
+    onReviewClick: (Int) -> Unit,
+    onAuthorClick: (Int) -> Unit,
+    onWriteReviewClick: (String, Int) -> Unit,
     homeScreen: @Composable () -> Unit,
     profileScreen: @Composable (onEditProfile: () -> Unit, onFollowersClick: (Int) -> Unit, onFollowingClick: (Int) -> Unit) -> Unit,
     profileEditScreen: @Composable (PaddingValues, () -> Unit) -> Unit,
     followersScreen: @Composable (PaddingValues, Int) -> Unit,
     followingScreen: @Composable (PaddingValues, Int) -> Unit,
     artistScreen: @Composable (PaddingValues, Int, () -> Unit, (Int) -> Unit) -> Unit,
-    albumScreen: @Composable (PaddingValues, Int, () -> Unit, (Int) -> Unit, (Int) -> Unit) -> Unit,
-    trackScreen: @Composable (PaddingValues, Int, () -> Unit, (Int) -> Unit, (Int) -> Unit) -> Unit,
-    searchScreen: @Composable (onArtistClick: (Int) -> Unit, onAlbumClick: (Int) -> Unit, onTrackClick: (Int) -> Unit) -> Unit
+    albumScreen: @Composable (PaddingValues, Int, () -> Unit, (Int) -> Unit, (Int) -> Unit, () -> Unit, (Int) -> Unit, (Int) -> Unit) -> Unit,
+    trackScreen: @Composable (PaddingValues, Int, () -> Unit, (Int) -> Unit, (Int) -> Unit, () -> Unit, (Int) -> Unit, (Int) -> Unit) -> Unit,
+    searchScreen: @Composable (onArtistClick: (Int) -> Unit, onAlbumClick: (Int) -> Unit, onTrackClick: (Int) -> Unit) -> Unit,
+    rateScreen: @Composable () -> Unit
 ) {
     val innerNav = rememberNavController()
 
@@ -70,9 +77,6 @@ fun MainShell(
                     )
                 },
                 actions = {
-                    TextButton(onClick = onLogout) {
-                        Text(text = stringResource(R.string.auth_logout_action))
-                    }
                 }
             )
         },
@@ -96,17 +100,40 @@ fun MainShell(
             startDestination = MainTab.Home.route,
             modifier = Modifier.padding(padding)
         ) {
-            composable(MainTab.Home.route) {
+            composable(
+                route = MainTab.Home.route,
+                enterTransition = { fadeIn(tween(250)) },
+                exitTransition = { fadeOut(tween(250)) }
+            ) {
                 homeScreen()
             }
-            composable(MainTab.Search.route) {
+            composable(
+                route = MainTab.Search.route,
+                enterTransition = { fadeIn(tween(250)) },
+                exitTransition = { fadeOut(tween(250)) }
+            ) {
                 searchScreen({ innerNav.navigate("artist/$it") }, { innerNav.navigate("album/$it") }, { innerNav.navigate("track/$it") })
             }
-            composable(MainTab.Rate.route) {
-                TabPlaceholderScreen(titleRes = R.string.nav_rate)
+            composable(
+                route = MainTab.Rate.route,
+                enterTransition = { fadeIn(tween(250)) },
+                exitTransition = { fadeOut(tween(250)) }
+            ) {
+                rateScreen()
             }
-            composable(MainTab.Profile.route) {
+            composable(
+                route = MainTab.Profile.route,
+                enterTransition = { fadeIn(tween(250)) },
+                exitTransition = { fadeOut(tween(250)) }
+            ) {
                 profileScreen({ innerNav.navigate("profile/edit") }, { userId -> innerNav.navigate("profile/followers/$userId") }, { userId -> innerNav.navigate("profile/following/$userId") })
+            }
+            composable(
+                route = MainTab.More.route,
+                enterTransition = { fadeIn(tween(250)) },
+                exitTransition = { fadeOut(tween(250)) }
+            ) {
+                TabPlaceholderScreen(titleRes = R.string.nav_more)
             }
             composable("profile/edit") {
                 profileEditScreen(PaddingValues(0.dp), { innerNav.popBackStack() })
@@ -121,10 +148,30 @@ fun MainShell(
                 artistScreen(PaddingValues(0.dp), backStackEntry.arguments?.getInt("artistId") ?: 0, { innerNav.popBackStack() }, { albumId -> innerNav.navigate("album/$albumId") })
             }
             composable("album/{albumId}", arguments = listOf(navArgument("albumId") { type = NavType.IntType })) { backStackEntry ->
-                albumScreen(PaddingValues(0.dp), backStackEntry.arguments?.getInt("albumId") ?: 0, { innerNav.popBackStack() }, { artistId -> innerNav.navigate("artist/$artistId") }, { trackId -> innerNav.navigate("track/$trackId") })
+                val albumId = backStackEntry.arguments?.getInt("albumId") ?: 0
+                albumScreen(
+                    PaddingValues(0.dp),
+                    albumId,
+                    { innerNav.popBackStack() },
+                    { artistId -> innerNav.navigate("artist/$artistId") },
+                    { trackId -> innerNav.navigate("track/$trackId") },
+                    { onWriteReviewClick("album", albumId) },
+                    { reviewId -> onReviewClick(reviewId) },
+                    { authorId -> onAuthorClick(authorId) }
+                )
             }
             composable("track/{trackId}", arguments = listOf(navArgument("trackId") { type = NavType.IntType })) { backStackEntry ->
-                trackScreen(PaddingValues(0.dp), backStackEntry.arguments?.getInt("trackId") ?: 0, { innerNav.popBackStack() }, { artistId -> innerNav.navigate("artist/$artistId") }, { albumId -> innerNav.navigate("album/$albumId") })
+                val trackId = backStackEntry.arguments?.getInt("trackId") ?: 0
+                trackScreen(
+                    PaddingValues(0.dp),
+                    trackId,
+                    { innerNav.popBackStack() },
+                    { artistId -> innerNav.navigate("artist/$artistId") },
+                    { albumId -> innerNav.navigate("album/$albumId") },
+                    { onWriteReviewClick("track", trackId) },
+                    { reviewId -> onReviewClick(reviewId) },
+                    { authorId -> onAuthorClick(authorId) }
+                )
             }
             composable(MainTab.More.route) {
                 TabPlaceholderScreen(titleRes = R.string.nav_more)

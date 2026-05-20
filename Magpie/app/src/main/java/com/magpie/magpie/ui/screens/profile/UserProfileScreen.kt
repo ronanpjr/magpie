@@ -375,6 +375,17 @@ private fun ReviewCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (!review.targetImageUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = review.targetImageUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                }
                 Surface(
                     color = MaterialTheme.colorScheme.primaryContainer,
                     shape = CircleShape,

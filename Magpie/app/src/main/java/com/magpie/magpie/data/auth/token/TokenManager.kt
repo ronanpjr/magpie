@@ -11,18 +11,20 @@ class TokenManager(context: Context) {
         context.applicationContext,
         TokenDatabase::class.java,
         DATABASE_NAME
-    ).build()
+    ).fallbackToDestructiveMigration().build()
 
     private val tokenDao = database.tokenDao()
 
-    fun saveTokens(accessToken: String, refreshToken: String? = null) {
+    fun saveTokens(accessToken: String, refreshToken: String? = null, username: String? = null, userId: Int? = null) {
         runBlocking {
             withContext(Dispatchers.IO) {
                 tokenDao.upsertToken(
                     TokenEntity(
                         id = 0,
                         accessToken = accessToken,
-                        refreshToken = refreshToken
+                        refreshToken = refreshToken,
+                        username = username,
+                        userId = userId
                     )
                 )
             }
@@ -41,6 +43,22 @@ class TokenManager(context: Context) {
         return runBlocking {
             withContext(Dispatchers.IO) {
                 tokenDao.getToken()?.refreshToken
+            }
+        }
+    }
+
+    fun getUsername(): String? {
+        return runBlocking {
+            withContext(Dispatchers.IO) {
+                tokenDao.getToken()?.username
+            }
+        }
+    }
+
+    fun getUserId(): Int? {
+        return runBlocking {
+            withContext(Dispatchers.IO) {
+                tokenDao.getToken()?.userId
             }
         }
     }

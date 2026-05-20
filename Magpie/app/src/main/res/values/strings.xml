@@ -95,6 +95,11 @@
     <string name="create_review_error_already_exists">Você já avaliou este item.</string>
     <string name="create_review_publish">Publicar</string>
 
+    <string name="review_detail_edit">Editar</string>
+    <string name="review_detail_edit_save">Salvar</string>
+    <string name="review_detail_delete">Excluir</string>
+    <string name="review_detail_delete_confirm">Tem certeza que deseja excluir esta avaliação? Esta ação não pode ser desfeita.</string>
+
     <string name="error_generic">Ocorreu um erro</string>
     <string name="catalog_artist_label">Artista</string>
     <string name="catalog_artist_bio_fallback">Biografia do artista %1$s...</string>
@@ -107,4 +112,16 @@
     <string name="catalog_action_rate">Avaliar</string>
     <string name="catalog_tracks_label">Músicas</string>
     <string name="catalog_tracks_empty">Nenhuma música encontrada.</string>
+    <string name="catalog_reviews_label">Avaliações</string>
+    <string name="catalog_reviews_empty">Ainda não há avaliações para este item. Seja o primeiro a avaliar!</string>
+
+    <string name="search_label">Pesquisar por artistas, álbuns ou usuários</string>
+    <string name="filter_all">Tudo</string>
+    <string name="filter_users">Usuários</string>
+    <string name="filter_artists">Artistas</string>
+    <string name="filter_albums">Álbuns</string>
+    <string name="category_artists">Artistas</string>
+    <string name="category_albums">Álbuns</string>
+    <string name="category_users">Usuários</string>
+    <string name="error_search_failed">Falha na pesquisa</string>
 </resources>

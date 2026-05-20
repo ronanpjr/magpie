@@ -34,7 +34,7 @@ class  RemoteAuthRepository(
             )
 
             // Save tokens
-            tokenManager.saveTokens(response.accessToken, response.refreshToken)
+            tokenManager.saveTokens(response.accessToken, response.refreshToken, response.user.username, response.user.id)
 
             AuthResult(
                 success = true,
@@ -64,7 +64,7 @@ class  RemoteAuthRepository(
             )
 
             // Save tokens
-            tokenManager.saveTokens(response.accessToken, response.refreshToken)
+            tokenManager.saveTokens(response.accessToken, response.refreshToken, response.user.username, response.user.id)
 
             AuthResult(
                 success = true,

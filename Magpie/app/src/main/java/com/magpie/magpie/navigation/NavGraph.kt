@@ -36,9 +36,11 @@ import com.magpie.magpie.ui.screens.profile.UserProfileViewModel
 import com.magpie.magpie.ui.screens.profile.UserProfileViewType
 import com.magpie.magpie.ui.screens.profile.UserListScreen
 import com.magpie.magpie.ui.screens.search.SearchScreen
+import com.magpie.magpie.ui.screens.rate.RateSearchScreen
 import com.magpie.magpie.ui.screens.feed.FeedViewModel
 import com.magpie.magpie.ui.screens.feed.HomeScreen
 import com.magpie.magpie.ui.screens.createreview.CreateReviewScreen
+import com.magpie.magpie.ui.screens.createreview.CreateReviewSource
 import com.magpie.magpie.ui.screens.createreview.CreateReviewViewModel
 import com.magpie.magpie.ui.screens.reviewcomments.ReviewCommentsScreen
 import com.magpie.magpie.ui.screens.reviewcomments.ReviewCommentsViewModel
@@ -96,6 +98,23 @@ fun MagpieNavGraph() {
             startDestination = startDestination
         ) {
             composable(Screen.Login.route) {
+                val hasStoredToken = remember { tokenManager.hasValidToken() }
+                val storedUsername = remember { tokenManager.getUsername() }
+
+                LaunchedEffect(hasStoredToken, storedUsername) {
+                    if (hasStoredToken && !storedUsername.isNullOrBlank()) {
+                        try {
+                            val token = tokenManager.getAccessToken() ?: throw Exception("No token")
+                            authApiService.getCurrentUser("Bearer $token")
+                            navController.navigate("${Screen.Main.route}/$storedUsername") {
+                                popUpTo(Screen.Login.route) { inclusive = true }
+                            }
+                        } catch (_: Exception) {
+                            tokenManager.clearTokens()
+                        }
+                    }
+                }
+
                 LoginScreen(
                     paddingValues = innerPadding,
                     onLogin = { username, password ->
@@ -215,13 +234,39 @@ fun MagpieNavGraph() {
             ) { backStackEntry ->
                 val templateId = backStackEntry.arguments?.getInt("templateReviewId") ?: 0
                 val vm = remember(templateId) {
-                    CreateReviewViewModel(reviewRepository, templateId)
+                    CreateReviewViewModel(catalogRepository, reviewRepository, CreateReviewSource.FromTemplate(templateId))
                 }
                 CreateReviewScreen(
                     paddingValues = innerPadding,
                     viewModel = vm,
                     onBack = { navController.popBackStack() },
-                    onPublished = { navController.popBackStack() }
+                    onPublished = {
+                        android.widget.Toast.makeText(context, "Avaliação publicada com sucesso!", android.widget.Toast.LENGTH_SHORT).show()
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            composable(
+                route = Screen.CreateReview.route,
+                arguments = listOf(
+                    navArgument("targetType") { type = NavType.StringType },
+                    navArgument("targetId") { type = NavType.IntType }
+                )
+            ) { backStackEntry ->
+                val targetType = backStackEntry.arguments?.getString("targetType") ?: ""
+                val targetId = backStackEntry.arguments?.getInt("targetId") ?: 0
+                val vm = remember(targetType, targetId) {
+                    CreateReviewViewModel(catalogRepository, reviewRepository, CreateReviewSource.Direct(targetType, targetId))
+                }
+                CreateReviewScreen(
+                    paddingValues = innerPadding,
+                    viewModel = vm,
+                    onBack = { navController.popBackStack() },
+                    onPublished = {
+                        android.widget.Toast.makeText(context, "Avaliação publicada com sucesso!", android.widget.Toast.LENGTH_SHORT).show()
+                        navController.popBackStack()
+                    }
                 )
             }
 
@@ -231,7 +276,7 @@ fun MagpieNavGraph() {
             ) { backStackEntry ->
                 val reviewId = backStackEntry.arguments?.getInt("reviewId") ?: 0
                 val detailViewModel = remember(reviewId) {
-                    ReviewDetailViewModel(reviewRepository, reviewId)
+                    ReviewDetailViewModel(reviewRepository, reviewId, tokenManager)
                 }
                 ReviewDetailScreen(
                     paddingValues = innerPadding,
@@ -245,6 +290,9 @@ fun MagpieNavGraph() {
                     },
                     onEvaluateClick = {
                         navController.navigate(Screen.CreateReviewFromTemplate.createRoute(reviewId))
+                    },
+                    onReviewDeleted = {
+                        navController.popBackStack()
                     }
                 )
             }
@@ -262,6 +310,15 @@ fun MagpieNavGraph() {
                         navController.navigate(Screen.Login.route) {
                             popUpTo(navController.graph.id) { inclusive = true }
                         }
+                    },
+                    onReviewClick = { reviewId ->
+                        navController.navigate(Screen.ReviewDetail.createRoute(reviewId))
+                    },
+                    onAuthorClick = { userId ->
+                        navController.navigate(Screen.UserProfile.createRoute(userId))
+                    },
+                    onWriteReviewClick = { targetType, targetId ->
+                        navController.navigate(Screen.CreateReview.createRoute(targetType, targetId))
                     },
                     homeScreen = {
                         val feedViewModel = remember { FeedViewModel(reviewRepository) }
@@ -343,30 +400,34 @@ fun MagpieNavGraph() {
                             onBackClick = onBackClick
                         )
                     },
-                    albumScreen = { padding, albumId, onBackClick, onArtistClick, onTrackClick ->
+                    albumScreen = { padding, albumId, onBack, onArtist, onTrack, onWrite, onReview, onAuthor ->
                         val viewModel = remember(albumId) {
                             AlbumViewModel(catalogRepository = catalogRepository, reviewRepository = reviewRepository, albumId = albumId)
                         }
                         AlbumScreen(
                             paddingValues = padding,
                             viewModel = viewModel,
-                            onArtistClick = onArtistClick,
-                            onWriteReviewClick = { id -> android.widget.Toast.makeText(context, "Avaliar álbum $id (em breve)", android.widget.Toast.LENGTH_SHORT).show() },
-                            onBackClick = onBackClick,
-                            onTrackClick = onTrackClick
+                            onArtistClick = onArtist,
+                            onWriteReviewClick = { onWrite() },
+                            onBackClick = onBack,
+                            onTrackClick = onTrack,
+                            onReviewClick = onReview,
+                            onAuthorClick = onAuthor
                         )
                     },
-                    trackScreen = { padding, trackId, onBackClick, onArtistClick, onAlbumClick ->
+                    trackScreen = { padding, trackId, onBack, onArtist, onAlbum, onWrite, onReview, onAuthor ->
                         val viewModel = remember(trackId) {
                             com.magpie.magpie.ui.screens.catalog.TrackViewModel(catalogRepository = catalogRepository, reviewRepository = reviewRepository, trackId = trackId)
                         }
                         com.magpie.magpie.ui.screens.catalog.TrackScreen(
                             paddingValues = padding,
                             viewModel = viewModel,
-                            onArtistClick = onArtistClick,
-                            onAlbumClick = onAlbumClick,
-                            onWriteReviewClick = { id -> android.widget.Toast.makeText(context, "Avaliar música $id (em breve)", android.widget.Toast.LENGTH_SHORT).show() },
-                            onBackClick = onBackClick
+                            onArtistClick = onArtist,
+                            onAlbumClick = onAlbum,
+                            onWriteReviewClick = { onWrite() },
+                            onReviewClick = onReview,
+                            onAuthorClick = onAuthor,
+                            onBackClick = onBack
                         )
                     },
                     searchScreen = { onArtistClick, onAlbumClick, onTrackClick ->
@@ -378,6 +439,15 @@ fun MagpieNavGraph() {
                             onTrackClick = { trackId -> onTrackClick(trackId) },
                             searchUsers = { query -> userProfileRepository.searchUsers(query).items },
                             searchCatalog = { query, type -> catalogRepository.search(query, type) }
+                        )
+                    },
+                    rateScreen = {
+                        RateSearchScreen(
+                            catalogRepository = catalogRepository,
+                            onNavigateToCreateReview = { targetType, targetId ->
+                                navController.navigate(Screen.CreateReview.createRoute(targetType, targetId))
+                            },
+                            paddingValues = innerPadding
                         )
                     }
                 )

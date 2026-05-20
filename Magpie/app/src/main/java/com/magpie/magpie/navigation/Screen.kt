@@ -41,6 +41,10 @@ sealed class Screen(val route: String) {
         fun createRoute(templateReviewId: Int): String = "review/create/from/$templateReviewId"
     }
 
+    data object CreateReview : Screen("review/create/{targetType}/{targetId}") {
+        fun createRoute(targetType: String, targetId: Int): String = "review/create/$targetType/$targetId"
+    }
+
     /** Shell principal com bottom bar; `username` vem do login. */
     data object Main : Screen("main")
 }
