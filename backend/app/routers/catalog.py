@@ -60,7 +60,7 @@ def _track_to_read(db: Session, track: Track) -> TrackRead:
 
 @router.get("/search", response_model=CatalogSearchResponse)
 def search_catalog(q: str = Query(min_length=2), type: str = Query("all"), limit: int = Query(10, ge=1, le=50), db: Session = Depends(get_db)) -> CatalogSearchResponse:
-    results = search_and_cache(q, db, limit=limit)
+    results = search_and_cache(q, db, limit=limit, type=type)
     want_artists = type in {"all", "artist"}
     want_albums = type in {"all", "album"}
     want_tracks = type in {"all", "track"}

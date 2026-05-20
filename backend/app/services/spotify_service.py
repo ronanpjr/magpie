@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timedelta
 
 import spotipy
+from requests import RequestException
+from requests.exceptions import RetryError
+from spotipy.exceptions import SpotifyException
 from spotipy.oauth2 import SpotifyClientCredentials
 from sqlmodel import Session, select
 
@@ -12,6 +16,8 @@ from app.models.catalog import Album, Artist, Track
 
 
 CACHE_TTL_DAYS = 7
+SEARCH_CACHE_TTL_SECONDS = 60
+_SEARCH_CACHE: dict[tuple[str, str, int], tuple[datetime, dict[str, list]]] = {}
 
 
 def get_spotify_client() -> spotipy.Spotify:
@@ -38,19 +44,51 @@ def _genre_list(genres: str | None) -> list[str]:
         return []
 
 
-def search_and_cache(q: str, db: Session, limit: int = 10) -> dict[str, list]:
+def _normalize_query(q: str) -> str:
+    return re.sub(r"\s+", " ", q).strip().lower()
+
+
+def _search_cache_key(q: str, type: str, limit: int) -> tuple[str, str, int]:
+    return (_normalize_query(q), type, limit)
+
+
+def _get_cached_search(q: str, type: str, limit: int) -> dict[str, list] | None:
+    key = _search_cache_key(q, type, limit)
+    cached = _SEARCH_CACHE.get(key)
+    if cached is None:
+        return None
+    cached_at, results = cached
+    if datetime.utcnow() - cached_at > timedelta(seconds=SEARCH_CACHE_TTL_SECONDS):
+        _SEARCH_CACHE.pop(key, None)
+        return None
+    return results
+
+
+def _set_cached_search(q: str, type: str, limit: int, results: dict[str, list]) -> None:
+    _SEARCH_CACHE[_search_cache_key(q, type, limit)] = (datetime.utcnow(), results)
+
+
+def search_and_cache(q: str, db: Session, limit: int = 10, type: str = "all") -> dict[str, list]:
     artists = db.exec(select(Artist).where(Artist.name.ilike(f"%{q}%")).limit(limit)).all()
     albums = db.exec(select(Album).where(Album.title.ilike(f"%{q}%")).limit(limit)).all()
     tracks = db.exec(select(Track).where(Track.title.ilike(f"%{q}%")).limit(limit)).all()
     if len(artists) + len(albums) + len(tracks) >= 3:
         return {"artists": artists, "albums": albums, "tracks": tracks}
 
+    cached = _get_cached_search(q, type, limit)
+    if cached is not None:
+        return {
+            "artists": artists + [artist for artist in cached["artists"] if artist not in artists],
+            "albums": albums + [album for album in cached["albums"] if album not in albums],
+            "tracks": tracks + [track for track in cached["tracks"] if track not in tracks],
+        }
+
     try:
         client = get_spotify_client()
-    except RuntimeError:
+        results = client.search(q=q, type="artist,album,track", limit=limit)
+    except (RuntimeError, SpotifyException, RetryError, RequestException):
         return {"artists": artists, "albums": albums, "tracks": tracks}
 
-    results = client.search(q=q, type="artist,album,track", limit=limit)
     for artist_item in results.get("artists", {}).get("items", []):
         artists.append(_upsert_artist(db, artist_item))
     for album_item in results.get("albums", {}).get("items", []):
@@ -58,7 +96,9 @@ def search_and_cache(q: str, db: Session, limit: int = 10) -> dict[str, list]:
     for track_item in results.get("tracks", {}).get("items", []):
         tracks.append(_upsert_track(db, track_item))
     db.commit()
-    return {"artists": artists, "albums": albums, "tracks": tracks}
+    merged = {"artists": artists, "albums": albums, "tracks": tracks}
+    _set_cached_search(q, type, limit, merged)
+    return merged
 
 
 def _upsert_artist(db: Session, payload: dict) -> Artist:
