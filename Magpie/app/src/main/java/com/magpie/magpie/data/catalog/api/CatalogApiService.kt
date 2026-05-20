@@ -35,4 +35,9 @@ interface CatalogApiService {
         @Query("type") type: String = "all",
         @Query("limit") limit: Int = 10
     ): CatalogSearchResponseDto
+
+    @GET("catalog/tracks/{id}")
+    suspend fun getTrack(
+        @Path("id") id: Int
+    ): TrackReadDto
 }

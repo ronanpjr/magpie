@@ -35,8 +35,9 @@ fun MainShell(
     followersScreen: @Composable (PaddingValues, Int) -> Unit,
     followingScreen: @Composable (PaddingValues, Int) -> Unit,
     artistScreen: @Composable (PaddingValues, Int, () -> Unit, (Int) -> Unit) -> Unit,
-    albumScreen: @Composable (PaddingValues, Int, () -> Unit, (Int) -> Unit) -> Unit,
-    searchScreen: @Composable (onArtistClick: (Int) -> Unit, onAlbumClick: (Int) -> Unit) -> Unit
+    albumScreen: @Composable (PaddingValues, Int, () -> Unit, (Int) -> Unit, (Int) -> Unit) -> Unit,
+    trackScreen: @Composable (PaddingValues, Int, () -> Unit, (Int) -> Unit, (Int) -> Unit) -> Unit,
+    searchScreen: @Composable (onArtistClick: (Int) -> Unit, onAlbumClick: (Int) -> Unit, onTrackClick: (Int) -> Unit) -> Unit
 ) {
     val innerNav = rememberNavController()
 
@@ -69,7 +70,7 @@ fun MainShell(
                 TabPlaceholderScreen(titleRes = R.string.nav_home)
             }
             composable(MainTab.Search.route) {
-                searchScreen({ innerNav.navigate("artist/$it") }, { innerNav.navigate("album/$it") })
+                searchScreen({ innerNav.navigate("artist/$it") }, { innerNav.navigate("album/$it") }, { innerNav.navigate("track/$it") })
             }
             composable(MainTab.Rate.route) {
                 TabPlaceholderScreen(titleRes = R.string.nav_rate)
@@ -90,7 +91,10 @@ fun MainShell(
                 artistScreen(PaddingValues(0.dp), backStackEntry.arguments?.getInt("artistId") ?: 0, { innerNav.popBackStack() }, { albumId -> innerNav.navigate("album/$albumId") })
             }
             composable("album/{albumId}", arguments = listOf(navArgument("albumId") { type = NavType.IntType })) { backStackEntry ->
-                albumScreen(PaddingValues(0.dp), backStackEntry.arguments?.getInt("albumId") ?: 0, { innerNav.popBackStack() }, { artistId -> innerNav.navigate("artist/$artistId") })
+                albumScreen(PaddingValues(0.dp), backStackEntry.arguments?.getInt("albumId") ?: 0, { innerNav.popBackStack() }, { artistId -> innerNav.navigate("artist/$artistId") }, { trackId -> innerNav.navigate("track/$trackId") })
+            }
+            composable("track/{trackId}", arguments = listOf(navArgument("trackId") { type = NavType.IntType })) { backStackEntry ->
+                trackScreen(PaddingValues(0.dp), backStackEntry.arguments?.getInt("trackId") ?: 0, { innerNav.popBackStack() }, { artistId -> innerNav.navigate("artist/$artistId") }, { albumId -> innerNav.navigate("album/$albumId") })
             }
             composable(MainTab.More.route) {
                 TabPlaceholderScreen(titleRes = R.string.nav_more)

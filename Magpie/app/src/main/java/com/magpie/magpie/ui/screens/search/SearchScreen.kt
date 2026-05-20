@@ -77,6 +77,7 @@ fun SearchScreen(
     onUserClick: (Int) -> Unit,
     onArtistClick: (Int) -> Unit,
     onAlbumClick: (Int) -> Unit,
+    onTrackClick: (Int) -> Unit,
     searchUsers: suspend (String) -> List<UserRead>,
     searchCatalog: suspend (String, String) -> CatalogSearchResponseDto
 ) {
