@@ -9,7 +9,7 @@ import com.magpie.magpie.data.auth.token.TokenManager
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class RemoteAuthRepository(
+class  RemoteAuthRepository(
     private val authApiService: AuthApiService,
     private val tokenManager: TokenManager
 ) : AuthRepository {
