@@ -36,6 +36,10 @@ import com.magpie.magpie.ui.screens.profile.UserListScreen
 import com.magpie.magpie.ui.screens.search.SearchScreen
 import com.magpie.magpie.ui.screens.feed.FeedViewModel
 import com.magpie.magpie.ui.screens.feed.HomeScreen
+import com.magpie.magpie.ui.screens.createreview.CreateReviewScreen
+import com.magpie.magpie.ui.screens.createreview.CreateReviewViewModel
+import com.magpie.magpie.ui.screens.reviewcomments.ReviewCommentsScreen
+import com.magpie.magpie.ui.screens.reviewcomments.ReviewCommentsViewModel
 import com.magpie.magpie.ui.screens.reviewdetail.ReviewDetailScreen
 import com.magpie.magpie.ui.screens.reviewdetail.ReviewDetailViewModel
 import kotlinx.coroutines.launch
@@ -155,7 +159,10 @@ fun MagpieNavGraph() {
                     onFollowersClick = { navController.navigate(Screen.ProfileFollowers.createRoute(userId)) },
                     onFollowingClick = { navController.navigate(Screen.ProfileFollowing.createRoute(userId)) },
                     onEditProfile = {},
-                    onLogout = {}
+                    onLogout = {},
+                    onReviewClick = { reviewId ->
+                        navController.navigate(Screen.ReviewDetail.createRoute(reviewId))
+                    }
                 )
             }
 
@@ -184,6 +191,37 @@ fun MagpieNavGraph() {
             }
 
             composable(
+                route = Screen.ReviewComments.route,
+                arguments = listOf(navArgument("reviewId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val reviewId = backStackEntry.arguments?.getInt("reviewId") ?: 0
+                val vm = remember(reviewId) {
+                    ReviewCommentsViewModel(reviewRepository, reviewId)
+                }
+                ReviewCommentsScreen(
+                    paddingValues = innerPadding,
+                    viewModel = vm,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.CreateReviewFromTemplate.route,
+                arguments = listOf(navArgument("templateReviewId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val templateId = backStackEntry.arguments?.getInt("templateReviewId") ?: 0
+                val vm = remember(templateId) {
+                    CreateReviewViewModel(reviewRepository, templateId)
+                }
+                CreateReviewScreen(
+                    paddingValues = innerPadding,
+                    viewModel = vm,
+                    onBack = { navController.popBackStack() },
+                    onPublished = { navController.popBackStack() }
+                )
+            }
+
+            composable(
                 route = Screen.ReviewDetail.route,
                 arguments = listOf(navArgument("reviewId") { type = NavType.IntType })
             ) { backStackEntry ->
@@ -197,6 +235,12 @@ fun MagpieNavGraph() {
                     onBack = { navController.popBackStack() },
                     onAuthorClick = { userId ->
                         navController.navigate(Screen.UserProfile.createRoute(userId))
+                    },
+                    onCommentsClick = {
+                        navController.navigate(Screen.ReviewComments.createRoute(reviewId))
+                    },
+                    onEvaluateClick = {
+                        navController.navigate(Screen.CreateReviewFromTemplate.createRoute(reviewId))
                     }
                 )
             }
@@ -253,6 +297,9 @@ fun MagpieNavGraph() {
                                 navController.navigate(Screen.Login.route) {
                                     popUpTo(navController.graph.id) { inclusive = true }
                                 }
+                            },
+                            onReviewClick = { reviewId ->
+                                navController.navigate(Screen.ReviewDetail.createRoute(reviewId))
                             }
                         )
                     }

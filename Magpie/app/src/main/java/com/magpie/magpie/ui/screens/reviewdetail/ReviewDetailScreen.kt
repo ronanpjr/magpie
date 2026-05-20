@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,6 +57,8 @@ fun ReviewDetailScreen(
     viewModel: ReviewDetailViewModel,
     onBack: () -> Unit,
     onAuthorClick: (Int) -> Unit,
+    onCommentsClick: () -> Unit,
+    onEvaluateClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState = viewModel.uiState.collectAsState()
@@ -131,7 +134,9 @@ fun ReviewDetailScreen(
                     ReviewDetailContent(
                         review = state.review,
                         onAuthorClick = onAuthorClick,
-                        onLikeClick = { viewModel.toggleLike() }
+                        onLikeClick = { viewModel.toggleLike() },
+                        onCommentsClick = onCommentsClick,
+                        onEvaluateClick = onEvaluateClick
                     )
                 }
             }
@@ -143,7 +148,9 @@ fun ReviewDetailScreen(
 private fun ReviewDetailContent(
     review: ReviewReadDto,
     onAuthorClick: (Int) -> Unit,
-    onLikeClick: () -> Unit
+    onLikeClick: () -> Unit,
+    onCommentsClick: () -> Unit,
+    onEvaluateClick: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -254,7 +261,9 @@ private fun ReviewDetailContent(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onCommentsClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
@@ -266,7 +275,7 @@ private fun ReviewDetailContent(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = stringResource(R.string.review_detail_comments_empty),
+                text = stringResource(R.string.review_detail_comments_open_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -278,6 +287,10 @@ private fun ReviewDetailContent(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        OutlinedButton(onClick = onEvaluateClick) {
+            Text(text = stringResource(R.string.review_detail_evaluate))
+        }
+        Spacer(modifier = Modifier.width(12.dp))
         Button(onClick = onLikeClick) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

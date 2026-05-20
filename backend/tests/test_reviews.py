@@ -41,6 +41,39 @@ def test_create_review_duplicate_like_flow(auth_client, db_session: Session):
     assert unlike.status_code == 200
 
 
+def test_review_comments_flat_matches_nested(auth_client, db_session: Session):
+    session = db_session
+    album_id, _ = _create_music(session)
+
+    create = auth_client.post(
+        "/reviews",
+        json={"target_type": "album", "target_id": album_id, "rating": 4.0, "body": "Root"},
+    )
+    assert create.status_code == 201
+    rid = create.json()["id"]
+
+    nested = auth_client.get(f"/reviews/{rid}/comments")
+    flat = auth_client.get(f"/review-comments/{rid}")
+    assert nested.status_code == 200
+    assert flat.status_code == 200
+    assert nested.json() == flat.json()
+
+    post_nested = auth_client.post(f"/reviews/{rid}/comments", json={"body": "  hello  "})
+    post_flat = auth_client.post(f"/review-comments/{rid}", json={"body": "  world  "})
+    assert post_nested.status_code == 201
+    assert post_flat.status_code == 201
+
+    nested2 = auth_client.get(f"/reviews/{rid}/comments")
+    flat2 = auth_client.get(f"/review-comments/{rid}")
+    assert nested2.json()["total"] == flat2.json()["total"] == 2
+
+    cid = post_nested.json()["id"]
+    v1 = auth_client.post(f"/reviews/{rid}/comments/{cid}/vote", json={"direction": "up"})
+    v2 = auth_client.post(f"/review-comments/{rid}/vote/{cid}", json={"direction": "down"})
+    assert v1.status_code == 200
+    assert v2.status_code == 200
+
+
 def test_edit_and_delete_authorization(client, db_session: Session):
     client.post(
         "/auth/register",

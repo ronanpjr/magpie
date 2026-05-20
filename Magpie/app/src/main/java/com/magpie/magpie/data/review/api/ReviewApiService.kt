@@ -1,7 +1,12 @@
 package com.magpie.magpie.data.review.api
 
 import com.magpie.magpie.data.review.models.PageDto
+import com.magpie.magpie.data.review.models.ReviewCommentCreateDto
+import com.magpie.magpie.data.review.models.ReviewCommentDto
+import com.magpie.magpie.data.review.models.ReviewCommentVoteRequestDto
+import com.magpie.magpie.data.review.models.ReviewCreateDto
 import com.magpie.magpie.data.review.models.ReviewReadDto
+import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -32,6 +37,31 @@ interface ReviewApiService {
     suspend fun getReview(
         @Path("reviewId") reviewId: Int
     ): ReviewReadDto
+
+    @POST("reviews")
+    suspend fun createReview(
+        @Body payload: ReviewCreateDto
+    ): ReviewReadDto
+
+    @GET("review-comments/{reviewId}")
+    suspend fun getReviewComments(
+        @Path("reviewId") reviewId: Int,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 50
+    ): PageDto<ReviewCommentDto>
+
+    @POST("review-comments/{reviewId}")
+    suspend fun postReviewComment(
+        @Path("reviewId") reviewId: Int,
+        @Body payload: ReviewCommentCreateDto
+    ): ReviewCommentDto
+
+    @POST("review-comments/{reviewId}/vote/{commentId}")
+    suspend fun voteReviewComment(
+        @Path("reviewId") reviewId: Int,
+        @Path("commentId") commentId: Int,
+        @Body payload: ReviewCommentVoteRequestDto
+    ): Map<String, String>
 
     @POST("reviews/{reviewId}/like")
     suspend fun likeReview(

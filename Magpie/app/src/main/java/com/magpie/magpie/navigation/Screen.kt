@@ -21,6 +21,14 @@ sealed class Screen(val route: String) {
         fun createRoute(reviewId: Int): String = "review/$reviewId"
     }
 
+    data object ReviewComments : Screen("review/{reviewId}/comments") {
+        fun createRoute(reviewId: Int): String = "review/$reviewId/comments"
+    }
+
+    data object CreateReviewFromTemplate : Screen("review/create/from/{templateReviewId}") {
+        fun createRoute(templateReviewId: Int): String = "review/create/from/$templateReviewId"
+    }
+
     /** Shell principal com bottom bar; `username` vem do login. */
     data object Main : Screen("main")
 }

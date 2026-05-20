@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.database import create_db_and_tables
-from app.routers import auth, catalog, feed, reviews, users
+from app.routers import auth, catalog, feed, review_comments_compat, reviews, users
 
 
 def create_app() -> FastAPI:
@@ -24,6 +24,7 @@ def create_app() -> FastAPI:
     app.include_router(users.router)
     app.include_router(catalog.router)
     app.include_router(reviews.router)
+    app.include_router(review_comments_compat.router)
     app.include_router(feed.router)
 
     @app.on_event("startup")
