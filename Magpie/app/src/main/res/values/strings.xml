@@ -21,7 +21,7 @@
     <string name="auth_error_invalid_credentials">Credenciais inválidas.</string>
     <string name="auth_error_password_mismatch">As senhas não coincidem.</string>
     <string name="nav_home">Home</string>
-    <string name="nav_search">Search</string>
+    <string name="nav_search">Pesquisar</string>
     <string name="nav_rate">Avaliar</string>
     <string name="nav_profile">Perfil</string>
     <string name="nav_more">Mais</string>
@@ -56,4 +56,22 @@
     <string name="profile_review_placeholder_subtitle_three">Ari Nova · 2021</string>
     <string name="profile_review_placeholder_body_three">Texturas orgânicas com uma batida precisa, sem perder o clima noturno.</string>
     <string name="profile_review_placeholder_rating_three">3.5</string>
+    <string name="feed_screen_title">Homepage</string>
+    <string name="feed_banner_following">Feed das pessoas que você segue</string>
+    <string name="feed_banner_trending">Destaques da comunidade</string>
+    <string name="feed_cover_content_description">Capa da música ou do álbum</string>
+    <string name="feed_avatar_content_description">Avatar do autor</string>
+    <string name="feed_empty">Nenhuma avaliação no feed ainda.</string>
+    <string name="feed_error_message">Não foi possível carregar o feed.</string>
+    <string name="feed_retry">Tentar novamente</string>
+    <string name="review_detail_title">Avaliação</string>
+    <string name="review_detail_back">Voltar</string>
+    <string name="review_detail_error">Erro ao carregar a avaliação.</string>
+    <string name="review_detail_rating_label">Nota</string>
+    <string name="review_detail_review_section">Resenha</string>
+    <string name="review_detail_comments_section">Comentários</string>
+    <string name="review_detail_comments_empty">Comentários ainda não estão disponíveis no app.</string>
+    <string name="review_detail_like">Curtir</string>
+    <string name="review_detail_liked">Curtido</string>
+    <string name="review_detail_like_count">(%1$d)</string>
 </resources>

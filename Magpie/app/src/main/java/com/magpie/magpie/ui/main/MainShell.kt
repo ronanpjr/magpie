@@ -3,9 +3,11 @@ package com.magpie.magpie.ui.main
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -23,15 +25,40 @@ import com.magpie.magpie.navigation.MainTab
 fun MainShell(
     username: String,
     onLogout: () -> Unit,
+    homeScreen: @Composable () -> Unit,
     profileScreen: @Composable () -> Unit,
     searchScreen: @Composable () -> Unit
 ) {
     val innerNav = rememberNavController()
 
+    val navBackStack by innerNav.currentBackStackEntryAsState()
+    val currentRoute = navBackStack?.destination?.route
+    val selectedTab = MainTab.entries.find { it.route == currentRoute } ?: MainTab.Home
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(text = username, maxLines = 1) },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background
+                ),
+                title = {
+                    Text(
+                        text = when (selectedTab) {
+                            MainTab.Home -> stringResource(R.string.feed_screen_title)
+                            MainTab.Search -> stringResource(R.string.nav_search)
+                            MainTab.Rate -> stringResource(R.string.nav_rate)
+                            MainTab.Profile -> username
+                            MainTab.More -> stringResource(R.string.nav_more)
+                        },
+                        maxLines = 1,
+                        color = if (selectedTab == MainTab.Home) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                },
                 actions = {
                     TextButton(onClick = onLogout) {
                         Text(text = stringResource(R.string.auth_logout_action))
@@ -40,10 +67,6 @@ fun MainShell(
             )
         },
         bottomBar = {
-            val navBackStack by innerNav.currentBackStackEntryAsState()
-            val currentRoute = navBackStack?.destination?.route
-            val selectedTab = MainTab.entries.find { it.route == currentRoute } ?: MainTab.Home
-
             MagpieBottomBar(
                 selectedTab = selectedTab,
                 onTabSelected = { tab ->
@@ -64,7 +87,7 @@ fun MainShell(
             modifier = Modifier.padding(padding)
         ) {
             composable(MainTab.Home.route) {
-                TabPlaceholderScreen(titleRes = R.string.nav_home)
+                homeScreen()
             }
             composable(MainTab.Search.route) {
                 searchScreen()

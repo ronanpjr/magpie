@@ -34,6 +34,10 @@ import com.magpie.magpie.ui.screens.profile.UserProfileViewModel
 import com.magpie.magpie.ui.screens.profile.UserProfileViewType
 import com.magpie.magpie.ui.screens.profile.UserListScreen
 import com.magpie.magpie.ui.screens.search.SearchScreen
+import com.magpie.magpie.ui.screens.feed.FeedViewModel
+import com.magpie.magpie.ui.screens.feed.HomeScreen
+import com.magpie.magpie.ui.screens.reviewdetail.ReviewDetailScreen
+import com.magpie.magpie.ui.screens.reviewdetail.ReviewDetailViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -53,7 +57,7 @@ fun MagpieNavGraph() {
         RetrofitClient.createService(ReviewApiService::class.java)
     }
     val reviewRepository = remember(context) {
-        ReviewRepository(reviewApiService, tokenManager)
+        ReviewRepository(reviewApiService)
     }
     val userProfileRepository = remember(context) {
         UserProfileRepository(authApiService, tokenManager, reviewRepository)
@@ -180,6 +184,24 @@ fun MagpieNavGraph() {
             }
 
             composable(
+                route = Screen.ReviewDetail.route,
+                arguments = listOf(navArgument("reviewId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val reviewId = backStackEntry.arguments?.getInt("reviewId") ?: 0
+                val detailViewModel = remember(reviewId) {
+                    ReviewDetailViewModel(reviewRepository, reviewId)
+                }
+                ReviewDetailScreen(
+                    paddingValues = innerPadding,
+                    viewModel = detailViewModel,
+                    onBack = { navController.popBackStack() },
+                    onAuthorClick = { userId ->
+                        navController.navigate(Screen.UserProfile.createRoute(userId))
+                    }
+                )
+            }
+
+            composable(
                 route = "${Screen.Main.route}/{username}",
                 arguments = listOf(navArgument("username") { type = NavType.StringType })
             ) { backStackEntry ->
@@ -192,6 +214,18 @@ fun MagpieNavGraph() {
                         navController.navigate(Screen.Login.route) {
                             popUpTo(navController.graph.id) { inclusive = true }
                         }
+                    },
+                    homeScreen = {
+                        val feedViewModel = remember {
+                            FeedViewModel(reviewRepository)
+                        }
+                        HomeScreen(
+                            paddingValues = innerPadding,
+                            viewModel = feedViewModel,
+                            onReviewClick = { reviewId ->
+                                navController.navigate(Screen.ReviewDetail.createRoute(reviewId))
+                            }
+                        )
                     },
                     searchScreen = {
                         SearchScreen(
