@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models.catalog import Album, Artist, Track
 from app.models.review import Review, ReviewTarget
 from app.schemas.catalog import AlbumRead, ArtistRead, CatalogSearchResponse, TrackRead
-from app.services.spotify_service import fetch_album_tracks, fetch_artist_albums, search_and_cache
+from app.services.spotify_service import get_album_total_tracks, fetch_album_tracks, fetch_artist_albums, search_and_cache
 
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
@@ -105,7 +105,8 @@ def album_tracks(album_id: int, db: Session = Depends(get_db)) -> list[TrackRead
     if album is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
     tracks = db.exec(select(Track).where(Track.album_id == album_id)).all()
-    if not tracks:
+    expected_tracks = get_album_total_tracks(album.spotify_id)
+    if not tracks or (expected_tracks is not None and len(tracks) != expected_tracks):
         tracks = fetch_album_tracks(album.spotify_id, db)
         db.commit()
     return [_track_to_read(db, track) for track in tracks]

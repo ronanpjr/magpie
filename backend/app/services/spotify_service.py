@@ -178,3 +178,13 @@ def fetch_album_tracks(spotify_id: str, db: Session) -> list[Track]:
         tracks.append(_upsert_track(db, item))
     db.commit()
     return tracks
+
+
+def get_album_total_tracks(spotify_id: str) -> int | None:
+    try:
+        client = get_spotify_client()
+    except RuntimeError:
+        return None
+    album_payload = client.album(spotify_id)
+    total_tracks = album_payload.get("total_tracks")
+    return int(total_tracks) if total_tracks is not None else None
