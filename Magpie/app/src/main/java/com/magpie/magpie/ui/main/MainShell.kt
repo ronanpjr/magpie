@@ -2,11 +2,14 @@ package com.magpie.magpie.ui.main
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -38,16 +41,6 @@ fun MainShell(
     val innerNav = rememberNavController()
 
     Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(text = stringResource(R.string.app_name), maxLines = 1) },
-                actions = {
-                    TextButton(onClick = onLogout) {
-                        Text(text = stringResource(R.string.auth_logout_action))
-                    }
-                }
-            )
-        },
         bottomBar = {
             val navBackStack by innerNav.currentBackStackEntryAsState()
             val currentRoute = navBackStack?.destination?.route

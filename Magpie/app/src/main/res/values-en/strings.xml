@@ -62,8 +62,7 @@
     <string name="catalog_discography_empty">No albums found.</string>
     <string name="catalog_album_label">Album</string>
     <string name="catalog_album_desc_fallback">Album %1$s by %2$s released in %3$s.</string>
-    <string name="catalog_critical_rating_label">Critical Rating</string>
-    <string name="catalog_general_rating_label">General Rating</string>
+    <string name="catalog_general_rating_label">Rating</string>
     <string name="catalog_action_rate">Rate</string>
     <string name="catalog_tracks_label">Tracks</string>
     <string name="catalog_tracks_empty">No tracks found.</string>
