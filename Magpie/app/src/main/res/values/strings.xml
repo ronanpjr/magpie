@@ -124,4 +124,10 @@
     <string name="category_albums">Álbuns</string>
     <string name="category_users">Usuários</string>
     <string name="error_search_failed">Falha na pesquisa</string>
+    <string name="menu_help">Ajuda</string>
+    <string name="menu_settings">Configurações</string>
+    <string name="menu_back">Voltar</string>
+    <string name="menu_title">Menu</string>
+    <string name="help_description">Magpie é um aplicativo que permite a avaliação de obras musicais e interação em comunidade, por meio de Comentários ou Fórum de discussões. O nome vem da ave “Magpie”, amplamente referenciada na mídia e que representa a dualidade das avaliações.</string>
+    <string name="help_rhyme">“One for sorrow, two for joy” - The Magpie Rhyme</string>
 </resources>

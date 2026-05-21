@@ -26,6 +26,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.magpie.magpie.R
 import com.magpie.magpie.navigation.MainTab
+import com.magpie.magpie.ui.screens.menu.HelpScreen
+import com.magpie.magpie.ui.screens.menu.MenuScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,7 +135,10 @@ fun MainShell(
                 enterTransition = { fadeIn(tween(250)) },
                 exitTransition = { fadeOut(tween(250)) }
             ) {
-                TabPlaceholderScreen(titleRes = R.string.nav_more)
+                MenuScreen(
+                    onNavigateToHelp = { innerNav.navigate("help") },
+                    onBackClick = { innerNav.popBackStack() }
+                )
             }
             composable("profile/edit") {
                 profileEditScreen(PaddingValues(0.dp), { innerNav.popBackStack() })
@@ -173,8 +178,10 @@ fun MainShell(
                     { authorId -> onAuthorClick(authorId) }
                 )
             }
-            composable(MainTab.More.route) {
-                TabPlaceholderScreen(titleRes = R.string.nav_more)
+            composable("help") {
+                HelpScreen(
+                    onBackClick = { innerNav.popBackStack() }
+                )
             }
         }
     }
