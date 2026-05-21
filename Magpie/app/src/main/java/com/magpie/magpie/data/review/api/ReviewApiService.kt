@@ -17,7 +17,7 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ReviewApiService {
-    // Da main
+
     @GET("users/{userId}/reviews")
     suspend fun getUserReviews(
         @Path("userId") userId: Int,
@@ -26,7 +26,7 @@ interface ReviewApiService {
         @Header("Authorization") token: String
     ): PageDto<ReviewReadDto>
 
-    // Da main
+
     @GET("reviews")
     suspend fun getReviews(
         @Query("target_type") targetType: String? = null,
@@ -38,7 +38,7 @@ interface ReviewApiService {
         @Header("Authorization") token: String
     ): PageDto<ReviewReadDto>
 
-    // Da sua branch
+
     @GET("feed")
     suspend fun getFeed(
         @Query("page") page: Int = 1,
